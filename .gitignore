@@ -134,3 +134,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# New additions from the code block
+dist/
+*.log
+.DS_Store
