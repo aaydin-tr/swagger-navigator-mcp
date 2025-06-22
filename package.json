@@ -37,6 +37,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.0",
+    "@types/js-yaml": "^4.0.9",
+    "dotenv": "^16.5.0",
+    "js-yaml": "^4.1.0",
     "zod": "^3.25.67"
   }
 }

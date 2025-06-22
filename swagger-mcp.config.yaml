@@ -1,0 +1,20 @@
+# Swagger MCP Server Configuration
+
+# List of Swagger/OpenAPI sources
+sources:
+  # Example: Petstore API (commonly used for testing)
+  - name: "petstore"
+    source: "https://petstore.swagger.io/v2/swagger.json"
+    description: "Swagger Petstore API - Example API for testing"
+    tags: ["example", "testing"]
+  
+  # Example: Local file source (we'll create this for testing)
+  - name: "local-example"
+    source: "./test/example-swagger.json"
+    description: "Local example API"
+    tags: ["local", "example"]
+
+# Search configuration  
+search:
+  fuzzyThreshold: 0.6
+  maxResults: 20 
