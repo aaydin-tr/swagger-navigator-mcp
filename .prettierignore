@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# Test coverage
+coverage/
+
+# Environment files
+.env*
+
+# Git
+.git/ 
