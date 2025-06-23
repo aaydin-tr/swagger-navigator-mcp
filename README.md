@@ -28,6 +28,7 @@ npx swagger-mcp
 ## Development
 
 Run with hot reload:
+
 ```bash
 npm run dev
 ```
@@ -43,11 +44,13 @@ npm run build
 ### Run locally with npx
 
 From the project directory:
+
 ```bash
 npx .
 ```
 
 Or after building:
+
 ```bash
 npm run build
 npx swagger-mcp
@@ -69,6 +72,8 @@ npx swagger-mcp
 ## MCP Tools
 
 ### add
+
 Adds two numbers together.
+
 - Input: `{ a: number, b: number }`
 - Output: The sum as text

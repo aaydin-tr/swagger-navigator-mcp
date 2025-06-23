@@ -11,12 +11,14 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "dev": "nodemon",
     "build:run": "npm run build && npm run start",
     "prepare": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\" \"*.{json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"*.{json,md,yaml,yml}\""
   },
   "repository": {
     "type": "git",
@@ -32,12 +34,18 @@
   "devDependencies": {
     "@types/node": "^24.0.3",
     "nodemon": "^3.1.10",
+    "prettier": "^3.6.0",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@apidevtools/swagger-parser": "^12.0.0",
     "@modelcontextprotocol/sdk": "^1.13.0",
     "@types/js-yaml": "^4.0.9",
+    "axios": "^1.10.0",
     "dotenv": "^16.5.0",
     "js-yaml": "^4.1.0",
     "zod": "^3.25.67"

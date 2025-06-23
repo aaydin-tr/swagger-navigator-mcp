@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -25,21 +25,21 @@ export function substituteEnvVars(input: string): string {
  * @returns The object with environment variables substituted in string values
  */
 export function substituteEnvVarsInObject<T>(obj: T): T {
-  if (typeof obj === 'string') {
+  if (typeof obj === "string") {
     return substituteEnvVars(obj) as T;
   }
-  
+
   if (Array.isArray(obj)) {
-    return obj.map(item => substituteEnvVarsInObject(item)) as T;
+    return obj.map((item) => substituteEnvVarsInObject(item)) as T;
   }
-  
-  if (obj !== null && typeof obj === 'object') {
+
+  if (obj !== null && typeof obj === "object") {
     const result: any = {};
     for (const [key, value] of Object.entries(obj)) {
       result[key] = substituteEnvVarsInObject(value);
     }
     return result as T;
   }
-  
+
   return obj;
-} 
+}

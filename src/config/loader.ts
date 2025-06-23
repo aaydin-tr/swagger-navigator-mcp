@@ -1,11 +1,11 @@
-import { readFileSync, existsSync } from 'fs';
-import { resolve } from 'path';
-import * as yaml from 'js-yaml';
-import { SwaggerMCPConfig, validateConfig, SwaggerSource, Config } from '../types/config.js';
-import { substituteEnvVarsInObject } from '../utils/env-substitution.js';
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
+import * as yaml from "js-yaml";
+import { SwaggerMCPConfig, validateConfig, SwaggerSource, Config } from "../types/config.js";
+import { substituteEnvVarsInObject } from "../utils/env-substitution.js";
 
-const DEFAULT_CONFIG_FILE_NAME = 'swagger-mcp.config.yaml';
-const CONFIG_PATH_ENV_VAR = 'CONFIG_PATH';
+const DEFAULT_CONFIG_FILE_NAME = "swagger-mcp.config.yaml";
+const CONFIG_PATH_ENV_VAR = "CONFIG_PATH";
 
 /**
  * Gets the configuration file path from environment variable or defaults to standard name
@@ -13,12 +13,12 @@ const CONFIG_PATH_ENV_VAR = 'CONFIG_PATH';
  */
 function getConfigPath(): string {
   const envConfigPath = process.env[CONFIG_PATH_ENV_VAR];
-  
+
   if (envConfigPath) {
     // If path is provided via env var, use it as-is (can be absolute or relative)
     return resolve(envConfigPath);
   }
-  
+
   // Default behavior: look for config file in current working directory
   return resolve(process.cwd(), DEFAULT_CONFIG_FILE_NAME);
 }
@@ -30,28 +30,28 @@ function getConfigPath(): string {
  */
 export function loadConfig(): Config {
   const configPath = getConfigPath();
-  
+
   if (!existsSync(configPath)) {
-    const envMessage = process.env[CONFIG_PATH_ENV_VAR] 
+    const envMessage = process.env[CONFIG_PATH_ENV_VAR]
       ? ` (specified via ${CONFIG_PATH_ENV_VAR})`
       : ` (default location)`;
-      
+
     throw new Error(
       `Configuration file not found: ${configPath}${envMessage}\n` +
-      `Please create a configuration file or set ${CONFIG_PATH_ENV_VAR} environment variable.`
+        `Please create a configuration file or set ${CONFIG_PATH_ENV_VAR} environment variable.`
     );
   }
-  
+
   try {
     // Read the YAML file
-    const fileContent = readFileSync(configPath, 'utf8');
-    
+    const fileContent = readFileSync(configPath, "utf8");
+
     // Parse YAML
     const rawConfig = yaml.load(fileContent);
-    
+
     // Substitute environment variables
     const configWithEnvVars = substituteEnvVarsInObject(rawConfig);
-    
+
     // Validate and return
     return validateConfig(configWithEnvVars);
   } catch (error) {
@@ -73,18 +73,18 @@ export function detectSourceType(source: string): {
   protocol?: string;
 } {
   const httpMatch = source.match(/^(https?):\/\//);
-  
+
   if (httpMatch) {
     return {
       isHttp: true,
       isFile: false,
-      protocol: httpMatch[1],
+      protocol: httpMatch[1]
     };
   }
-  
+
   return {
     isHttp: false,
-    isFile: true,
+    isFile: true
   };
 }
 
@@ -94,11 +94,11 @@ export function detectSourceType(source: string): {
  * @returns Configuration with runtime-detected types
  */
 export function enrichConfigWithTypes(config: Config): SwaggerMCPConfig {
-  const enrichedSources: SwaggerSource[] = config.sources.map(source => {
+  const enrichedSources: SwaggerSource[] = config.sources.map((source) => {
     const sourceType = detectSourceType(source.source);
     return {
       ...source,
-      type: sourceType.isHttp ? 'http' : 'file'
+      type: sourceType.isHttp ? "http" : "file"
     } as SwaggerSource;
   });
 
@@ -124,7 +124,7 @@ export function getConfig(): SwaggerMCPConfig {
  */
 export function createSampleConfig(path?: string): void {
   const configPath = path || getConfigPath();
-  
+
   const sampleConfig = `# Swagger MCP Server Configuration
 
 # List of Swagger/OpenAPI sources
@@ -134,7 +134,7 @@ sources:
     source: "./swagger/api.json"
     description: "Local API documentation"
     tags: ["local", "development"]
-  
+
   # Example: HTTP source with authentication
   - name: "remote-api"
     source: "https://api.example.com/swagger.json"
@@ -143,12 +143,12 @@ sources:
       Authorization: "Bearer \${API_TOKEN}"
     tags: ["remote", "production"]
 
-# Optional: Search configuration  
+# Optional: Search configuration
 # search:
 #   fuzzyThreshold: 0.6  # 0-1, lower = more fuzzy
 #   maxResults: 50
 `;
-  
-  require('fs').writeFileSync(configPath, sampleConfig);
+
+  require("fs").writeFileSync(configPath, sampleConfig);
   console.log(`Sample configuration created at: ${configPath}`);
-} 
+}
