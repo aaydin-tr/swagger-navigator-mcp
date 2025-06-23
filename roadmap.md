@@ -36,17 +36,21 @@ To create a bridge between API documentation (Swagger/OpenAPI) and LLMs, enablin
 ### Phase 1: Core Foundation (Week 1-2)
 
 #### 1.1 Configuration System
-- [ ] Design configuration schema
-- [ ] Support multiple Swagger sources
-- [ ] File-based Swagger support (.json, .yaml)
-- [ ] HTTP/HTTPS endpoint support
-- [ ] Configuration validation
-- [ ] Environment variable substitution
+- [x] Design configuration schema
+- [x] Support multiple Swagger sources
+- [x] File-based Swagger support (.json, .yaml)
+- [x] HTTP/HTTPS endpoint support
+- [x] Configuration validation
+- [x] Environment variable substitution
+- [x] Custom config path via CONFIG_PATH environment variable
 
 **Configuration File:**
 ```
-# Single configuration file location:
+# Default configuration file location:
 ./swagger-mcp.config.yaml
+
+# Or specify custom path via environment variable:
+CONFIG_PATH=/path/to/config.yaml npx swagger-mcp
 ```
 
 **Configuration Example:**
@@ -248,7 +252,7 @@ interface SwaggerSource {
 2. **Query Performance**: <100ms for endpoint searches
 3. **Memory Efficiency**: <100MB for 1000 endpoints
 4. **LLM Accuracy**: >95% correct endpoint selection
-5. **Developer Satisfaction**: Easy configuration and setup
+5. **Developer Satisfaction**: Easy configuration and setup with flexible config paths
 
 ## Testing Strategy
 
@@ -273,7 +277,7 @@ interface SwaggerSource {
 ## Release Plan
 
 ### v0.1.0 - MVP
-- Basic configuration support
+- Basic configuration support with CONFIG_PATH environment variable
 - File-based Swagger parsing
 - list_all_endpoints tool
 - search_endpoint tool

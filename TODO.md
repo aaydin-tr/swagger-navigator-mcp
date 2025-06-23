@@ -10,7 +10,7 @@ This file contains enhancement ideas that came up during the roadmap review. The
   - ./swagger-mcp.config.json
   - ./.swagger-mcp/config.yaml
   - ./.swagger-mcp/config.json
-- [ ] Environment variable override: `SWAGGER_MCP_CONFIG=/path/to/config.yaml`
+- [x] Environment variable override: `CONFIG_PATH=/path/to/config.yaml`
 - [ ] Hot-reload configuration support
 - [ ] Configuration file watcher
 - [ ] Graceful reload without dropping connections

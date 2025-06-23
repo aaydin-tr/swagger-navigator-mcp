@@ -1,23 +1,44 @@
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import * as yaml from 'js-yaml';
-import { SwaggerMCPConfig, validateConfig } from '../types/config.js';
+import { SwaggerMCPConfig, validateConfig, SwaggerSource, Config } from '../types/config.js';
 import { substituteEnvVarsInObject } from '../utils/env-substitution.js';
 
-const CONFIG_FILE_NAME = 'swagger-mcp.config.yaml';
+const DEFAULT_CONFIG_FILE_NAME = 'swagger-mcp.config.yaml';
+const CONFIG_PATH_ENV_VAR = 'CONFIG_PATH';
+
+/**
+ * Gets the configuration file path from environment variable or defaults to standard name
+ * @returns The resolved configuration file path
+ */
+function getConfigPath(): string {
+  const envConfigPath = process.env[CONFIG_PATH_ENV_VAR];
+  
+  if (envConfigPath) {
+    // If path is provided via env var, use it as-is (can be absolute or relative)
+    return resolve(envConfigPath);
+  }
+  
+  // Default behavior: look for config file in current working directory
+  return resolve(process.cwd(), DEFAULT_CONFIG_FILE_NAME);
+}
 
 /**
  * Loads and validates the configuration file
  * @returns The validated configuration
  * @throws Error if configuration file not found or invalid
  */
-export function loadConfig(): SwaggerMCPConfig {
-  const configPath = resolve(process.cwd(), CONFIG_FILE_NAME);
+export function loadConfig(): Config {
+  const configPath = getConfigPath();
   
   if (!existsSync(configPath)) {
+    const envMessage = process.env[CONFIG_PATH_ENV_VAR] 
+      ? ` (specified via ${CONFIG_PATH_ENV_VAR})`
+      : ` (default location)`;
+      
     throw new Error(
-      `Configuration file not found: ${configPath}\n` +
-      `Please create a ${CONFIG_FILE_NAME} file in the project root.`
+      `Configuration file not found: ${configPath}${envMessage}\n` +
+      `Please create a configuration file or set ${CONFIG_PATH_ENV_VAR} environment variable.`
     );
   }
   
@@ -68,11 +89,41 @@ export function detectSourceType(source: string): {
 }
 
 /**
+ * Enriches the configuration with runtime-detected types
+ * @param config The validated configuration
+ * @returns Configuration with runtime-detected types
+ */
+export function enrichConfigWithTypes(config: Config): SwaggerMCPConfig {
+  const enrichedSources: SwaggerSource[] = config.sources.map(source => {
+    const sourceType = detectSourceType(source.source);
+    return {
+      ...source,
+      type: sourceType.isHttp ? 'http' : 'file'
+    } as SwaggerSource;
+  });
+
+  return {
+    ...config,
+    sources: enrichedSources
+  };
+}
+
+/**
+ * Loads, validates, and enriches the configuration file
+ * @returns The enriched configuration with runtime types
+ * @throws Error if configuration file not found or invalid
+ */
+export function getConfig(): SwaggerMCPConfig {
+  const config = loadConfig();
+  return enrichConfigWithTypes(config);
+}
+
+/**
  * Creates a sample configuration file
  * @param path Optional path to create the file at
  */
 export function createSampleConfig(path?: string): void {
-  const configPath = path || resolve(process.cwd(), CONFIG_FILE_NAME);
+  const configPath = path || getConfigPath();
   
   const sampleConfig = `# Swagger MCP Server Configuration
 
