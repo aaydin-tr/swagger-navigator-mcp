@@ -7,7 +7,8 @@ import {
   SwaggerParserOptions,
   SwaggerParserResult,
   OpenAPIPathItem,
-  OpenAPIOperation
+  OpenAPIOperation,
+  OpenAPIDocument
 } from "../types/swagger.js";
 import { SwaggerSource } from "../types/config.js";
 
@@ -32,20 +33,20 @@ export class SwaggerParserModule {
         };
       }
 
-      let api: any;
+      let api: OpenAPIDocument;
 
       if (source.type === "file") {
         // For file sources, use SwaggerParser directly
-        api = await SwaggerParser.validate(source.source);
+        api = (await SwaggerParser.validate(source.source)) as unknown as OpenAPIDocument;
       } else {
         // For HTTP sources, fetch the content first
         const content = await this.fetchHttpContent(source, options);
-        api = await SwaggerParser.validate(content);
+        api = (await SwaggerParser.validate(content)) as unknown as OpenAPIDocument;
       }
 
       // If dereference is requested, apply it
       if (options.dereference) {
-        api = await SwaggerParser.dereference(api);
+        api = (await SwaggerParser.dereference(api)) as unknown as OpenAPIDocument;
       }
 
       // Convert to our format
@@ -70,7 +71,10 @@ export class SwaggerParserModule {
   /**
    * Fetches content from an HTTP source
    */
-  private async fetchHttpContent(source: SwaggerSource, options: SwaggerParserOptions): Promise<any> {
+  private async fetchHttpContent(
+    source: SwaggerSource,
+    options: SwaggerParserOptions
+  ): Promise<string | OpenAPIDocument> {
     try {
       const response = await axios.get(source.source, {
         headers: source.headers,
@@ -89,35 +93,42 @@ export class SwaggerParserModule {
       }
 
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
-      } else if (error.request) {
-        throw new Error(`Network error: No response received`);
-      } else {
-        throw new Error(`Request error: ${error.message}`);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
+        } else if (error.request) {
+          throw new Error(`Network error: No response received`);
+        } else {
+          throw new Error(`Request error: ${error.message}`);
+        }
       }
+      throw new Error(`Request error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
   /**
    * Converts a parsed OpenAPI document to our internal format
    */
-  private convertToInternalFormat(api: any, sourceName: string): ParsedSwaggerSpec {
+  private convertToInternalFormat(api: OpenAPIDocument, sourceName: string): ParsedSwaggerSpec {
     const version = this.detectVersion(api);
     const endpoints = this.extractEndpoints(api);
+
+    // Handle different versions of OpenAPI
+    const isV2 = "swagger" in api && api.swagger === "2.0";
+    const isV3 = "openapi" in api;
 
     return {
       version,
       info: api.info || {},
-      servers: api.servers,
-      host: api.host,
-      basePath: api.basePath,
-      schemes: api.schemes,
+      servers: isV3 && "servers" in api ? api.servers : undefined,
+      host: isV2 && "host" in api ? api.host : undefined,
+      basePath: isV2 && "basePath" in api ? api.basePath : undefined,
+      schemes: isV2 && "schemes" in api ? api.schemes : undefined,
       endpoints,
-      components: api.components,
-      definitions: api.definitions,
-      securityDefinitions: api.securityDefinitions,
+      components: isV3 && "components" in api ? api.components : undefined,
+      definitions: isV2 && "definitions" in api ? api.definitions : undefined,
+      securityDefinitions: isV2 && "securityDefinitions" in api ? api.securityDefinitions : undefined,
       sourceName
     };
   }
@@ -125,10 +136,10 @@ export class SwaggerParserModule {
   /**
    * Detects the OpenAPI/Swagger version
    */
-  private detectVersion(api: any): "2.0" | "3.0" | "3.1" {
-    if (api.swagger === "2.0") {
+  private detectVersion(api: OpenAPIDocument): "2.0" | "3.0" | "3.1" {
+    if ("swagger" in api && api.swagger === "2.0") {
       return "2.0";
-    } else if (api.openapi) {
+    } else if ("openapi" in api && api.openapi) {
       if (api.openapi.startsWith("3.0")) {
         return "3.0";
       } else if (api.openapi.startsWith("3.1")) {
@@ -142,7 +153,7 @@ export class SwaggerParserModule {
   /**
    * Extracts all endpoints from the API specification
    */
-  private extractEndpoints(api: any): ParsedEndpoint[] {
+  private extractEndpoints(api: OpenAPIDocument): ParsedEndpoint[] {
     const endpoints: ParsedEndpoint[] = [];
 
     if (!api.paths) {
@@ -150,11 +161,17 @@ export class SwaggerParserModule {
     }
 
     for (const [path, pathItem] of Object.entries(api.paths)) {
+      if (!pathItem) continue;
+
       const pathObj = pathItem as OpenAPIPathItem;
-      const methods = ["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const;
+      // Note: 'trace' is only available in OpenAPI 3.x, not in Swagger 2.0
+      const isV2 = "swagger" in api && api.swagger === "2.0";
+      const methods = isV2
+        ? (["get", "post", "put", "delete", "patch", "head", "options"] as const)
+        : (["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const);
 
       for (const method of methods) {
-        const operation = pathObj[method] as OpenAPIOperation | undefined;
+        const operation = (pathObj as any)[method] as OpenAPIOperation | undefined;
         if (operation) {
           endpoints.push(this.createEndpoint(path, method, operation, api));
         }
@@ -167,7 +184,12 @@ export class SwaggerParserModule {
   /**
    * Creates a parsed endpoint from an operation
    */
-  private createEndpoint(path: string, method: string, operation: OpenAPIOperation, api: any): ParsedEndpoint {
+  private createEndpoint(
+    path: string,
+    method: string,
+    operation: OpenAPIOperation,
+    api: OpenAPIDocument
+  ): ParsedEndpoint {
     const endpoint: ParsedEndpoint = {
       path,
       method: method.toUpperCase(),
@@ -176,19 +198,19 @@ export class SwaggerParserModule {
       description: operation.description,
       tags: operation.tags,
       parameters: operation.parameters,
-      responses: operation.responses,
+      responses: operation.responses as any, // Type differences between versions
       security: operation.security,
       deprecated: operation.deprecated
     };
 
-    // Handle request body
-    if (operation.requestBody) {
-      endpoint.requestBody = operation.requestBody;
+    // Handle request body (only in OpenAPI 3.x)
+    if ("requestBody" in operation && operation.requestBody) {
+      endpoint.requestBody = operation.requestBody as any;
     }
 
-    // Handle servers
-    if (operation.servers) {
-      endpoint.servers = operation.servers;
+    // Handle servers (can be on operation level in OpenAPI 3.x)
+    if ("servers" in operation && (operation as any).servers) {
+      endpoint.servers = (operation as any).servers;
     }
 
     return endpoint;
@@ -197,7 +219,7 @@ export class SwaggerParserModule {
   /**
    * Detects potential warnings in the specification
    */
-  private detectWarnings(api: any): string[] {
+  private detectWarnings(api: OpenAPIDocument): string[] {
     const warnings: string[] = [];
 
     // Check for missing info
@@ -213,7 +235,13 @@ export class SwaggerParserModule {
     let endpointsWithoutId = 0;
     if (api.paths) {
       for (const pathItem of Object.values(api.paths)) {
-        const methods = ["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const;
+        if (!pathItem) continue;
+
+        const isV2 = "swagger" in api && api.swagger === "2.0";
+        const methods = isV2
+          ? (["get", "post", "put", "delete", "patch", "head", "options"] as const)
+          : (["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const);
+
         for (const method of methods) {
           const operation = (pathItem as any)[method];
           if (operation && !operation.operationId) {
@@ -233,20 +261,24 @@ export class SwaggerParserModule {
   /**
    * Creates a parse error from an exception
    */
-  private createParseError(error: any, source: string): SwaggerParseError {
+  private createParseError(error: unknown, source: string): SwaggerParseError {
     let code: SwaggerParseError["code"] = "UNKNOWN";
-    let message = error.message || "Unknown error occurred";
+    let message = "Unknown error occurred";
 
-    if (error.message?.includes("ENOENT")) {
-      code = "FILE_NOT_FOUND";
-      message = "File not found";
-    } else if (error.message?.includes("Circular")) {
-      code = "CIRCULAR_REFERENCE";
-      message = "Circular reference detected";
-    } else if (error.message?.includes("Network") || error.message?.includes("HTTP")) {
-      code = "NETWORK_ERROR";
-    } else if (error.message?.includes("valid") || error.message?.includes("schema")) {
-      code = "INVALID_FORMAT";
+    if (error instanceof Error) {
+      message = error.message;
+
+      if (error.message?.includes("ENOENT")) {
+        code = "FILE_NOT_FOUND";
+        message = "File not found";
+      } else if (error.message?.includes("Circular")) {
+        code = "CIRCULAR_REFERENCE";
+        message = "Circular reference detected";
+      } else if (error.message?.includes("Network") || error.message?.includes("HTTP")) {
+        code = "NETWORK_ERROR";
+      } else if (error.message?.includes("valid") || error.message?.includes("schema")) {
+        code = "INVALID_FORMAT";
+      }
     }
 
     const parseError = new Error(message) as SwaggerParseError;

@@ -1,79 +1,20 @@
-export interface OpenAPIInfo {
-  title: string;
-  version: string;
-  description?: string;
-  termsOfService?: string;
-  contact?: {
-    name?: string;
-    url?: string;
-    email?: string;
-  };
-  license?: {
-    name: string;
-    url?: string;
-  };
-}
+import { OpenAPI, OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 
-export interface OpenAPIServer {
-  url: string;
-  description?: string;
-  variables?: Record<string, any>;
-}
-
-export interface OpenAPIParameter {
-  name: string;
-  in: "query" | "header" | "path" | "cookie";
-  description?: string;
-  required?: boolean;
-  deprecated?: boolean;
-  schema?: any;
-  example?: any;
-  examples?: Record<string, any>;
-}
-
-export interface OpenAPIRequestBody {
-  description?: string;
-  content: Record<string, any>;
-  required?: boolean;
-}
-
-export interface OpenAPIResponse {
-  description: string;
-  headers?: Record<string, any>;
-  content?: Record<string, any>;
-  links?: Record<string, any>;
-}
-
-export interface OpenAPIOperation {
-  tags?: string[];
-  summary?: string;
-  description?: string;
-  externalDocs?: any;
-  operationId?: string;
-  parameters?: OpenAPIParameter[];
-  requestBody?: OpenAPIRequestBody;
-  responses: Record<string, OpenAPIResponse>;
-  callbacks?: Record<string, any>;
-  deprecated?: boolean;
-  security?: Array<Record<string, string[]>>;
-  servers?: OpenAPIServer[];
-}
-
-export interface OpenAPIPathItem {
-  $ref?: string;
-  summary?: string;
-  description?: string;
-  get?: OpenAPIOperation;
-  put?: OpenAPIOperation;
-  post?: OpenAPIOperation;
-  delete?: OpenAPIOperation;
-  options?: OpenAPIOperation;
-  head?: OpenAPIOperation;
-  patch?: OpenAPIOperation;
-  trace?: OpenAPIOperation;
-  servers?: OpenAPIServer[];
-  parameters?: OpenAPIParameter[];
-}
+// Re-export common types
+export type OpenAPIDocument = OpenAPI.Document;
+export type OpenAPIInfo = OpenAPIV3.InfoObject | OpenAPIV3_1.InfoObject | OpenAPIV2.InfoObject;
+export type OpenAPIServer = OpenAPIV3.ServerObject | OpenAPIV3_1.ServerObject;
+export type OpenAPIParameter = OpenAPI.Parameter;
+export type OpenAPIRequestBody = OpenAPIV3.RequestBodyObject | OpenAPIV3_1.RequestBodyObject;
+export type OpenAPIResponse = OpenAPIV3.ResponseObject | OpenAPIV3_1.ResponseObject | OpenAPIV2.ResponseObject;
+export type OpenAPIOperation = OpenAPI.Operation;
+export type OpenAPIPathItem = OpenAPIV3.PathItemObject | OpenAPIV3_1.PathItemObject | OpenAPIV2.PathItemObject;
+export type OpenAPIComponents = OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject;
+export type OpenAPISecurityScheme =
+  | OpenAPIV3.SecuritySchemeObject
+  | OpenAPIV3_1.SecuritySchemeObject
+  | OpenAPIV2.SecuritySchemeObject;
+export type OpenAPISchema = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject | OpenAPIV2.SchemaObject;
 
 // Custom types for our parser
 export interface ParsedEndpoint {
@@ -85,8 +26,11 @@ export interface ParsedEndpoint {
   tags?: string[];
   parameters?: OpenAPIParameter[];
   requestBody?: OpenAPIRequestBody;
-  responses?: Record<string, OpenAPIResponse>;
-  security?: Array<Record<string, string[]>>;
+  responses?: OpenAPIV3.ResponsesObject | OpenAPIV3_1.ResponsesObject | OpenAPIV2.ResponsesDefinitionsObject;
+  security?:
+    | OpenAPIV3.SecurityRequirementObject[]
+    | OpenAPIV3_1.SecurityRequirementObject[]
+    | OpenAPIV2.SecurityRequirementObject[];
   deprecated?: boolean;
   servers?: OpenAPIServer[];
 }
@@ -99,15 +43,15 @@ export interface ParsedSwaggerSpec {
   basePath?: string;
   schemes?: string[];
   endpoints: ParsedEndpoint[];
-  components?: any;
-  definitions?: any;
-  securityDefinitions?: any;
+  components?: OpenAPIComponents;
+  definitions?: OpenAPIV2.DefinitionsObject;
+  securityDefinitions?: OpenAPIV2.SecurityDefinitionsObject;
   sourceName: string;
 }
 
 export interface SwaggerParseError extends Error {
   code: "INVALID_FORMAT" | "NETWORK_ERROR" | "FILE_NOT_FOUND" | "CIRCULAR_REFERENCE" | "UNKNOWN";
-  details?: any;
+  details?: unknown;
   source: string;
 }
 
