@@ -1,5 +1,4 @@
 import SwaggerParser from "@apidevtools/swagger-parser";
-import { readFileSync } from "fs";
 import axios from "axios";
 import {
   ParsedSwaggerSpec,
