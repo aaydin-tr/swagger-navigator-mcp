@@ -102,8 +102,6 @@ sources:
 ```typescript
 interface ListEndpointsInput {
   source?: string; // Filter by specific source
-  tags?: string[]; // Filter by tags
-  methods?: string[]; // Filter by HTTP methods
   limit?: number; // Pagination limit
   offset?: number; // Pagination offset
 }
@@ -111,8 +109,7 @@ interface ListEndpointsInput {
 interface EndpointSummary {
   path: string;
   method: string;
-  operationId?: string;
-  summary?: string;
+  description?: string;
   tags?: string[];
   source: string;
 }

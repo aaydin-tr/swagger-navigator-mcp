@@ -49,7 +49,7 @@ export interface ParsedSwaggerSpec {
   sourceName: string;
 }
 
-export interface SwaggerParseError extends Error {
+export interface SwaggerParseError {
   code: "INVALID_FORMAT" | "NETWORK_ERROR" | "FILE_NOT_FOUND" | "CIRCULAR_REFERENCE" | "UNKNOWN";
   details?: unknown;
   source: string;
