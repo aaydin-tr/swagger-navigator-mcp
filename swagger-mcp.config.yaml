@@ -10,6 +10,7 @@ sources:
 
   - name: "test"
     source: "https://api.apis.guru/v2/specs/6-dot-authentiqio.appspot.com/6/openapi.json"
+    description: "Authentiqio API"
 
 # Search configuration
 search:

@@ -263,17 +263,12 @@ export class SwaggerParserModule {
    */
   private createParseError(error: unknown, source: string): SwaggerParseError {
     let code: SwaggerParseError["code"] = "UNKNOWN";
-    let message = "Unknown error occurred";
 
     if (error instanceof Error) {
-      message = error.message;
-
       if (error.message?.includes("ENOENT")) {
         code = "FILE_NOT_FOUND";
-        message = "File not found";
       } else if (error.message?.includes("Circular")) {
         code = "CIRCULAR_REFERENCE";
-        message = "Circular reference detected";
       } else if (error.message?.includes("Network") || error.message?.includes("HTTP")) {
         code = "NETWORK_ERROR";
       } else if (error.message?.includes("valid") || error.message?.includes("schema")) {
@@ -281,12 +276,11 @@ export class SwaggerParserModule {
       }
     }
 
-    const parseError = new Error(message) as SwaggerParseError;
-    parseError.code = code;
-    parseError.source = source;
-    parseError.details = error;
-
-    return parseError;
+    return {
+      code,
+      source,
+      details: error
+    };
   }
 
   /**
