@@ -1,18 +1,12 @@
 import { z } from "zod";
 
-export const authSchema = z.object({
-  type: z.enum(["bearer", "basic", "apiKey"]),
-  credentials: z.string()
-});
-
 export const swaggerSourceSchema = z.object({
   name: z.string().min(1, "Source name cannot be empty"),
   source: z.string().min(1, "Source cannot be empty"),
-  description: z.string().optional(),
+  description: z.string().min(1, "Description cannot be empty"),
   tags: z.array(z.string()).optional(),
   headers: z.record(z.string()).optional(),
-  auth: authSchema.optional(),
-  refreshInterval: z.number().positive().optional()
+  refreshInterval: z.number().positive().optional().default(3600)
 });
 
 export const searchConfigSchema = z.object({
@@ -28,7 +22,6 @@ export const configSchema = z.object({
   })
 });
 
-export type AuthConfig = z.infer<typeof authSchema>;
 export type SwaggerSourceConfig = z.infer<typeof swaggerSourceSchema>;
 export type SearchConfig = z.infer<typeof searchConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
