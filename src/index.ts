@@ -5,7 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { getConfig } from "@config/loader.js";
 import { SwaggerMCPConfig } from "@app-types/config.js";
 import { SwaggerParserModule } from "@parsers/swagger-parser.js";
-import { ParsedEndpoint, SwaggerParserResult } from "@app-types/swagger.js";
+import { OpenAPIInfo, ParsedEndpoint, SwaggerParserResult } from "@app-types/swagger.js";
 import { z } from "zod";
 
 async function main() {
@@ -46,7 +46,6 @@ async function main() {
       } else {
         errorCount++;
         console.error(`  ✗ ${source.name} failed to parse: ${parseResult.errors?.[0]?.details || "Unknown error"}`);
-        // Store error information for later reference
         parsedSpecs.set(source.name, {
           errors: parseResult.errors,
           success: false
@@ -104,80 +103,52 @@ async function main() {
   );
 
   server.registerTool(
-    "list_all_endpoints",
+    "list_all_sources",
     {
-      title: "List All Endpoints",
-      description:
-        "Lists all available API endpoints from configured Swagger sources with optional filtering and pagination",
-      inputSchema: {
-        source: z.string().optional().describe("Optional: Filter by specific source name"),
-        limit: z
-          .number()
-          .min(1)
-          .max(1000)
-          .optional()
-          .describe("Optional: Maximum number of endpoints to return (default: 100)"),
-        offset: z
-          .number()
-          .min(0)
-          .optional()
-          .describe("Optional: Number of endpoints to skip for pagination (default: 0)")
+      title: "List All Sources",
+      description: "Lists all available Swagger sources",
+      inputSchema: {},
+      outputSchema: {
+        sources: z.array(
+          z
+            .object({
+              name: z.string(),
+              description: z.string(),
+              info: z
+                .object({
+                  title: z.string(),
+                  version: z.string()
+                })
+                .passthrough()
+            })
+            .passthrough()
+        )
       }
     },
-    async (args) => {
-      const limit = args.limit || 100;
-      const offset = args.offset || 0;
+    async () => {
+      const sources: { name: string; description: string; info: OpenAPIInfo }[] = [];
+      parsedSpecs.forEach((value, key) => {
+        const info = { title: "Unknown", version: "Unknown", ...value.spec?.info };
+        const description = config.sources.find((s) => s.name === key)?.description || "Unknown";
 
-      if (args.source && !parsedSpecs.has(args.source)) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Source "${args.source}" not found in configuration`
-            }
-          ]
-        };
-      }
-
-      const singleSourceResult = parsedSpecs.get(args.source);
-
-      const allEndpoints: ParsedEndpoint[] = [];
-
-      for (const source of sourceResult) {
-        const parseResult = await parser.parse(source);
-
-        if (parseResult.success && parseResult.spec) {
-          const spec = parseResult.spec;
-
-          if (spec.endpoints) {
-            for (const endpoint of spec.endpoints) {
-              allEndpoints.push(endpoint);
-            }
-          }
+        if (value.success) {
+          sources.push({
+            name: key,
+            description: description,
+            info: info
+          });
         }
-      }
+      });
 
-      // Apply pagination
-      const paginatedEndpoints = allEndpoints.slice(offset, offset + limit);
-
-      const result = {
-        endpoints: paginatedEndpoints,
-        pagination: {
-          total: allEndpoints.length,
-          limit: limit,
-          offset: offset,
-          hasMore: offset + limit < allEndpoints.length
-        },
-        sources: sourcesToParse.map((s) => s.name)
-      };
-
+      const result = { sources };
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(result, null, 2)
+            text: JSON.stringify(result)
           }
-        ]
+        ],
+        structuredContent: result
       };
     }
   );
