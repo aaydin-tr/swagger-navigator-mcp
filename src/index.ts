@@ -80,29 +80,6 @@ async function main() {
   });
 
   server.registerTool(
-    "test_config",
-    {
-      title: "Test Configuration",
-      description: "Returns the loaded configuration and parsing status for testing",
-      inputSchema: {}
-    },
-    async () => ({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              config: config
-            },
-            null,
-            2
-          )
-        }
-      ]
-    })
-  );
-
-  server.registerTool(
     "list_all_sources",
     {
       title: "List All Sources",
