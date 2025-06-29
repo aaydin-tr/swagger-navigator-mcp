@@ -109,20 +109,23 @@ async function main() {
       description: "Lists all available Swagger sources",
       inputSchema: {},
       outputSchema: {
-        sources: z.array(
-          z
-            .object({
-              name: z.string(),
-              description: z.string(),
-              info: z
-                .object({
-                  title: z.string(),
-                  version: z.string()
-                })
-                .passthrough()
-            })
-            .passthrough()
-        )
+        sources: z
+          .array(
+            z
+              .object({
+                name: z.string(),
+                description: z.string(),
+                info: z
+                  .object({
+                    title: z.string(),
+                    version: z.string()
+                  })
+                  .passthrough()
+              })
+              .passthrough()
+          )
+          .optional(),
+        error: z.string().optional()
       }
     },
     async () => {
@@ -139,6 +142,14 @@ async function main() {
           });
         }
       });
+
+      if (sources.length === 0) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: "No sources found" }) }],
+          structuredContent: { error: "No sources found" }
+        };
+      }
 
       const result = { sources };
       return {
@@ -166,22 +177,27 @@ async function main() {
         })
       },
       outputSchema: {
-        endpoints: z.array(
-          z
-            .object({
-              path: z.string(),
-              method: z.string(),
-              description: z.string()
-            })
-            .passthrough()
-        ),
-        pagination: z.object({
-          total: z.number().describe("The total number of endpoints"),
-          limit: z.number().describe("The number of endpoints to return"),
-          offset: z.number().describe("The number of endpoints to skip"),
-          hasNext: z.boolean().describe("Whether there are more endpoints to fetch"),
-          hasPrevious: z.boolean().describe("Whether there are previous endpoints to fetch")
-        })
+        endpoints: z
+          .array(
+            z
+              .object({
+                path: z.string(),
+                method: z.string(),
+                description: z.string()
+              })
+              .passthrough()
+          )
+          .optional(),
+        pagination: z
+          .object({
+            total: z.number().describe("The total number of endpoints"),
+            limit: z.number().describe("The number of endpoints to return"),
+            offset: z.number().describe("The number of endpoints to skip"),
+            hasNext: z.boolean().describe("Whether there are more endpoints to fetch"),
+            hasPrevious: z.boolean().describe("Whether there are previous endpoints to fetch")
+          })
+          .optional(),
+        error: z.string().optional()
       }
     },
     async (input) => {
@@ -192,23 +208,37 @@ async function main() {
       const source = parsedSpecs.get(sourceName);
       if (!source) {
         return {
+          isError: true,
           content: [
             {
               type: "text",
-              text: `Source ${sourceName} not found`,
-              isError: true,
-              _meta: { error: "Source not found" }
+              text: JSON.stringify({ error: `Source '${sourceName}' not found` })
             }
-          ]
+          ],
+          structuredContent: { error: `Source '${sourceName}' not found` }
         };
       }
 
-      const endpoints = source.spec?.endpoints.slice(offset, offset + limit) || [];
+      if (!source.success || !source.spec) {
+        const errorDetails = source.errors?.[0]?.details || "Unknown parsing error";
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Source '${sourceName}' failed to parse - ${errorDetails}` })
+            }
+          ],
+          structuredContent: { error: `Source '${sourceName}' failed to parse - ${errorDetails}` }
+        };
+      }
+
+      const endpoints = source.spec.endpoints.slice(offset, offset + limit);
       const pagination = {
-        total: source.spec?.endpoints.length || 0,
+        total: source.spec.endpoints.length,
         limit: limit,
         offset: offset,
-        hasNext: offset + limit < (source.spec?.endpoints.length || 0),
+        hasNext: offset + limit < source.spec.endpoints.length,
         hasPrevious: offset > 0
       };
 
@@ -216,7 +246,7 @@ async function main() {
         content: [
           {
             type: "text",
-            text: JSON.stringify({ endpoints, pagination }, null, 2)
+            text: JSON.stringify({ endpoints, pagination })
           }
         ],
         structuredContent: { endpoints, pagination }
