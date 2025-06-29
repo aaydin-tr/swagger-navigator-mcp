@@ -153,6 +153,76 @@ async function main() {
     }
   );
 
+  server.registerTool(
+    "list_endpoints_for_source",
+    {
+      title: "List Endpoints for Source",
+      description: "Lists endpoints for a given source (by name) with limit and offset",
+      inputSchema: {
+        request: z.object({
+          name: z.string().describe("The name of the source to list endpoints for"),
+          limit: z.number().min(1).max(100).default(10).describe("The maximum number of endpoints to return"),
+          offset: z.number().min(0).default(0).describe("The number of endpoints to skip")
+        })
+      },
+      outputSchema: {
+        endpoints: z.array(
+          z
+            .object({
+              path: z.string(),
+              method: z.string(),
+              description: z.string()
+            })
+            .passthrough()
+        ),
+        pagination: z.object({
+          total: z.number().describe("The total number of endpoints"),
+          limit: z.number().describe("The number of endpoints to return"),
+          offset: z.number().describe("The number of endpoints to skip"),
+          hasNext: z.boolean().describe("Whether there are more endpoints to fetch"),
+          hasPrevious: z.boolean().describe("Whether there are previous endpoints to fetch")
+        })
+      }
+    },
+    async (input) => {
+      const sourceName = input.request.name;
+      const limit = input.request.limit;
+      const offset = input.request.offset;
+
+      const source = parsedSpecs.get(sourceName);
+      if (!source) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Source ${sourceName} not found`,
+              isError: true,
+              _meta: { error: "Source not found" }
+            }
+          ]
+        };
+      }
+
+      const endpoints = source.spec?.endpoints.slice(offset, offset + limit) || [];
+      const pagination = {
+        total: source.spec?.endpoints.length || 0,
+        limit: limit,
+        offset: offset,
+        hasNext: offset + limit < (source.spec?.endpoints.length || 0),
+        hasPrevious: offset > 0
+      };
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ endpoints, pagination }, null, 2)
+          }
+        ],
+        structuredContent: { endpoints, pagination }
+      };
+    }
+  );
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Swagger MCP Server is running...");
