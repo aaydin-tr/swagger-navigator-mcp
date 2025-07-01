@@ -70,3 +70,7 @@ export interface SwaggerParserResult {
   errors?: SwaggerParseError[];
   warnings?: string[];
 }
+
+export type ExtendedParsedEndpoint = ParsedEndpoint & {
+  source_name: string;
+};
