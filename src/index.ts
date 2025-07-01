@@ -103,7 +103,27 @@ async function main() {
     "list_all_sources",
     {
       title: "List All Sources",
-      description: "Lists all available Swagger sources",
+      description: `Retrieves a comprehensive list of all available Swagger/OpenAPI sources (APIs) in the system.
+      **Purpose:**
+      This tool provides an overview of all loaded API specifications, showing you what APIs are available to search and explore. Use this when you need to understand the scope of available APIs or when helping users discover what services are accessible.
+
+      **Returns:**
+      For each available API source, you'll get:
+      - **name** - Unique identifier for the API source (used with other tools)
+      - **description** - Human-readable description of what the API does
+      - **info** - OpenAPI specification details including:
+        - title - Official API name
+        - version - API version number
+        - Additional metadata from the OpenAPI spec
+
+      **When to use:**
+      - At the start of API exploration to show available options
+      - When users ask "what APIs are available?"
+      - To help users choose which API source to focus on
+      - Before using other tools that require a source_name parameter
+
+      **For AI Assistants:**
+      Use this tool to provide users with a menu of available APIs. The returned source names can be used with \`list_endpoints_for_source\` to explore specific APIs in detail. This helps users understand their options before diving into specific endpoint searches.`,
       inputSchema: {},
       outputSchema: {
         sources: z
@@ -165,7 +185,38 @@ async function main() {
     "list_endpoints_for_source",
     {
       title: "List Endpoints for Source",
-      description: "Lists endpoints for a given source (by name) with limit and offset",
+      description: `Retrieves all endpoints from a specific API source with pagination support.
+      **Purpose:**
+      This tool provides a comprehensive view of all available endpoints within a particular API source. Use this when you need to explore the complete capabilities of a specific API or when search results indicate promising endpoints from a particular source.
+
+      **Parameters:**
+      - **name** (required) - The source name (get from \`list_all_sources\` or \`search_endpoint\` results)
+      - **limit** (optional, 1-100, default: 10) - Maximum endpoints to return per request
+      - **offset** (optional, default: 0) - Number of endpoints to skip (for pagination)
+
+      **Returns:**
+      - **endpoints** - Array of endpoint objects containing:
+        - path - URL path (e.g., /api/v1/users/{id})
+        - method - HTTP method (GET, POST, PUT, DELETE, etc.)
+        - description - What the endpoint does
+        - Additional endpoint metadata from OpenAPI spec
+      - **pagination** - Navigation information:
+        - total - Total number of endpoints in this source
+        - limit/offset - Current pagination settings
+        - hasNext/hasPrevious - Whether more pages are available
+
+      **Usage Patterns:**
+      - **Initial exploration**: Start with default limit (10) to get an overview
+      - **Full discovery**: Use higher limits or iterate through pages for complete coverage
+      - **Targeted browsing**: Use offset to jump to specific sections of the API
+
+      **For AI Assistants:**
+      This tool is essential for understanding the complete scope of an API after finding relevant endpoints through search. When \`search_endpoint\` returns results from a specific source_name, use this tool to:
+      1. Discover related endpoints that might be useful
+      2. Understand the API's overall structure and capabilities
+      3. Provide comprehensive guidance about available operations
+      4. Help users make informed decisions about which endpoints to use
+      Always check pagination.hasNext to determine if more endpoints are available when providing complete API overviews.`,
       inputSchema: {
         request: z.object({
           name: z.string().describe("The name of the source to list endpoints for"),
