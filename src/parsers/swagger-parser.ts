@@ -1,5 +1,6 @@
 import SwaggerParser from "@apidevtools/swagger-parser";
 import axios from "axios";
+import { SwaggerSource } from "../types/config.js";
 import {
   ParsedSwaggerSpec,
   ParsedEndpoint,
@@ -10,7 +11,6 @@ import {
   OpenAPIOperation,
   OpenAPIDocument
 } from "../types/swagger.js";
-import { SwaggerSource } from "../types/config.js";
 
 export class SwaggerParserModule {
   /**
@@ -83,7 +83,7 @@ export class SwaggerParserModule {
         if (error.response) {
           throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
         } else if (error.request) {
-          throw new Error(`Network error: No response received`);
+          throw new Error("Network error: No response received");
         } else {
           throw new Error(`Request error: ${error.message}`);
         }
@@ -156,9 +156,10 @@ export class SwaggerParserModule {
         : (["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const);
 
       for (const method of methods) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const operation = (pathObj as any)[method] as OpenAPIOperation | undefined;
         if (operation) {
-          endpoints.push(this.createEndpoint(path, method, operation, api));
+          endpoints.push(this.createEndpoint(path, method, operation));
         }
       }
     }
@@ -169,12 +170,7 @@ export class SwaggerParserModule {
   /**
    * Creates a parsed endpoint from an operation
    */
-  private createEndpoint(
-    path: string,
-    method: string,
-    operation: OpenAPIOperation,
-    api: OpenAPIDocument
-  ): ParsedEndpoint {
+  private createEndpoint(path: string, method: string, operation: OpenAPIOperation): ParsedEndpoint {
     const endpoint: ParsedEndpoint = {
       path,
       method: method.toUpperCase(),
@@ -183,6 +179,7 @@ export class SwaggerParserModule {
       description: operation.description,
       tags: operation.tags,
       parameters: operation.parameters,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       responses: operation.responses as any, // Type differences between versions
       security: operation.security,
       deprecated: operation.deprecated
@@ -190,11 +187,14 @@ export class SwaggerParserModule {
 
     // Handle request body (only in OpenAPI 3.x)
     if ("requestBody" in operation && operation.requestBody) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       endpoint.requestBody = operation.requestBody as any;
     }
 
     // Handle servers (can be on operation level in OpenAPI 3.x)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ("servers" in operation && (operation as any).servers) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       endpoint.servers = (operation as any).servers;
     }
 
@@ -228,6 +228,7 @@ export class SwaggerParserModule {
           : (["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const);
 
         for (const method of methods) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const operation = (pathItem as any)[method];
           if (operation && !operation.operationId) {
             endpointsWithoutId++;

@@ -17,7 +17,7 @@ function getConfigPath(): string {
   if (!envConfigPath) {
     throw new Error(
       `${CONFIG_PATH_ENV_VAR} environment variable is required.\n` +
-        `Please set CONFIG_PATH to the path of your configuration file.`
+        "Please set CONFIG_PATH to the path of your configuration file."
     );
   }
 
@@ -36,7 +36,7 @@ export function loadConfig(): Config {
   if (!existsSync(configPath)) {
     throw new Error(
       `Configuration file not found: ${configPath} (specified via ${CONFIG_PATH_ENV_VAR})\n` +
-        `Please create the configuration file at the specified path.`
+        "Please create the configuration file at the specified path."
     );
   }
 

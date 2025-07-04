@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { getConfig } from "@config/loader.js";
-import { SwaggerMCPConfig } from "@app-types/config.js";
-import { SwaggerParserModule } from "@parsers/swagger-parser.js";
-import { ExtendedParsedEndpoint, OpenAPIInfo, SwaggerParserResult } from "@app-types/swagger.js";
-import { z } from "zod";
-import Fuse from "fuse.js";
 import * as fs from "fs";
 import * as path from "path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import Fuse from "fuse.js";
+import { z } from "zod";
+import { SwaggerMCPConfig } from "@app-types/config.js";
+import { ExtendedParsedEndpoint, OpenAPIInfo, SwaggerParserResult } from "@app-types/swagger.js";
+import { getConfig } from "@config/loader.js";
+import { SwaggerParserModule } from "@parsers/swagger-parser.js";
 
 // Global state
 let config: SwaggerMCPConfig;
