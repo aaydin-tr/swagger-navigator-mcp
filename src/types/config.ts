@@ -4,22 +4,19 @@ export const swaggerSourceSchema = z.object({
   name: z.string().min(1, "Source name cannot be empty"),
   source: z.string().min(1, "Source cannot be empty"),
   description: z.string().min(1, "Description cannot be empty"),
-  tags: z.array(z.string()).optional(),
-  headers: z.record(z.string()).optional(),
-  refreshInterval: z.number().positive().optional().default(3600)
+  headers: z.record(z.string()).optional()
 });
 
 export const searchConfigSchema = z.object({
-  fuzzyThreshold: z.number().min(0).max(1).default(0.6),
-  maxResults: z.number().positive().default(50)
+  fuzzyThreshold: z.number().min(0).max(1).default(0.6)
 });
 
 export const configSchema = z.object({
   sources: z.array(swaggerSourceSchema).min(1, "At least one source is required"),
   search: searchConfigSchema.optional().default({
-    fuzzyThreshold: 0.6,
-    maxResults: 20
-  })
+    fuzzyThreshold: 0.6
+  }),
+  refreshInterval: z.number().positive().optional().default(300) // 5 minutes
 });
 
 export type SwaggerSourceConfig = z.infer<typeof swaggerSourceSchema>;
