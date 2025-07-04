@@ -66,9 +66,9 @@ Intelligently searches endpoints using fuzzy matching across multiple attributes
 
 ## ⚙️ Configuration
 
-### 🤖 Usage with Claude Desktop
+### 🤖 Usage with Cursor
 
-Add this to your `claude_desktop_config.json`:
+Add this to your `~/.cursor/mcp.json`:
 
 #### Using npx
 
@@ -167,20 +167,6 @@ CONFIG_PATH=./swagger-navigator-mcp.config.yaml npm start
 ```
 
 ### 🧪 Development Mode
-
-```bash
-npm run dev
-```
-
----
-
-## 🏗️ Building
-
-```bash
-npm run build
-```
-
-For development with hot reload:
 
 ```bash
 npm run dev
