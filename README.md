@@ -76,22 +76,6 @@ Add this to your `claude_desktop_config.json`:
 }
 ```
 
-#### Using node
-
-```json
-{
-  "mcpServers": {
-    "swagger-navigator-mcp": {
-      "command": "node",
-      "args": ["path/to/swagger-navigator-mcp/dist/index.js"],
-      "env": {
-        "CONFIG_PATH": "path/to/swagger-navigator-mcp.config.yaml"
-      }
-    }
-  }
-}
-```
-
 ### Configuration File
 
 Create a `swagger-navigator-mcp.config.yaml` file:
