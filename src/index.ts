@@ -8,6 +8,8 @@ import { SwaggerParserModule } from "@parsers/swagger-parser.js";
 import { ExtendedParsedEndpoint, OpenAPIInfo, SwaggerParserResult } from "@app-types/swagger.js";
 import { z } from "zod";
 import Fuse from "fuse.js";
+import * as fs from "fs";
+import * as path from "path";
 
 // Global state
 let config: SwaggerMCPConfig;
@@ -20,6 +22,10 @@ let fuseEndpoints: Fuse<ExtendedParsedEndpoint>;
 let isRefreshing = false;
 let refreshPromise: Promise<void> = Promise.resolve();
 
+// File watching
+let configWatcher: fs.FSWatcher | null = null;
+let refreshTimer: NodeJS.Timeout | null = null;
+
 /**
  * Waits for any ongoing refresh to complete
  */
@@ -27,6 +33,29 @@ async function waitForRefreshComplete(): Promise<void> {
   if (isRefreshing) {
     console.error("Tool call waiting for refresh to complete...");
     await refreshPromise;
+  }
+}
+
+/**
+ * Loads and validates configuration
+ * @returns New config or null if loading failed
+ */
+function loadConfig(): SwaggerMCPConfig | null {
+  try {
+    const newConfig = getConfig();
+    const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
+    console.error(`[${new Date().toISOString()}] Loaded configuration from: ${configPath}`);
+    console.error(`Found ${newConfig.sources.length} sources`);
+    console.error(`Refresh interval: ${newConfig.refreshInterval} seconds`);
+
+    for (const source of newConfig.sources) {
+      console.error(`  - ${source.name}: ${source.type === "http" ? "HTTP" : "File"} source`);
+    }
+
+    return newConfig;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Configuration error:`, error);
+    return null;
   }
 }
 
@@ -168,33 +197,144 @@ async function refreshSources(): Promise<void> {
 }
 
 /**
+ * Handles config file changes by reloading config and reparsing sources
+ */
+async function handleConfigChange(): Promise<void> {
+  console.error(`[${new Date().toISOString()}] Config file changed, reloading...`);
+
+  // Set refresh flag and create new promise for waiting tool calls
+  isRefreshing = true;
+  let resolveRefresh: () => void;
+  refreshPromise = new Promise<void>((resolve) => {
+    resolveRefresh = resolve;
+  });
+
+  try {
+    // Load new configuration
+    const newConfig = loadConfig();
+    if (!newConfig) {
+      console.error(`[${new Date().toISOString()}] Failed to reload config, keeping current configuration`);
+      return;
+    }
+
+    // Update global config
+    const oldRefreshInterval = config.refreshInterval;
+    config = newConfig;
+
+    // If refresh interval changed, restart the timer
+    if (oldRefreshInterval !== newConfig.refreshInterval) {
+      console.error(
+        `[${new Date().toISOString()}] Refresh interval changed from ${oldRefreshInterval}s to ${newConfig.refreshInterval}s`
+      );
+      setupRefreshTimer();
+    }
+
+    // Reparse all sources with new config
+    const { successCount, errorCount, newParsedSpecs } = await parseAllSources();
+
+    if (successCount > 0) {
+      // Create new search index from new specs
+      const { endpoints, fuse } = createFuseIndex(newParsedSpecs);
+
+      // Atomic update: swap all global state at once
+      parsedSpecs.clear();
+      newParsedSpecs.forEach((value, key) => parsedSpecs.set(key, value));
+      allEndpoints = endpoints;
+      fuseEndpoints = fuse;
+
+      console.error(
+        `[${new Date().toISOString()}] Config reload completed: ${successCount} successful, ${errorCount} failed`
+      );
+      console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+    } else {
+      console.error(`[${new Date().toISOString()}] Config reload failed: No sources were successfully parsed`);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Config reload error:`, error);
+  } finally {
+    // Always clear the refresh flag and resolve waiting promises
+    isRefreshing = false;
+    resolveRefresh!();
+  }
+}
+
+/**
+ * Sets up file watching for the config file
+ */
+function setupConfigWatcher(): void {
+  const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
+  const absoluteConfigPath = path.resolve(configPath);
+
+  try {
+    // Clean up existing watcher
+    if (configWatcher) {
+      configWatcher.close();
+    }
+
+    console.error(`Setting up config file watcher for: ${absoluteConfigPath}`);
+
+    configWatcher = fs.watch(absoluteConfigPath, { persistent: false }, (eventType) => {
+      if (eventType === "change") {
+        // Debounce rapid file changes (common with editors)
+        setTimeout(() => {
+          handleConfigChange();
+        }, 100);
+      }
+    });
+
+    configWatcher.on("error", (error) => {
+      console.error(`Config file watcher error: ${error.message}`);
+      // Try to restart watcher after a delay
+      setTimeout(setupConfigWatcher, 5000);
+    });
+  } catch (error) {
+    console.error(`Failed to setup config file watcher: ${error}`);
+  }
+}
+
+/**
  * Sets up the refresh interval timer
  */
 function setupRefreshTimer(): void {
+  // Clear existing timer
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+  }
+
   const intervalMs = config.refreshInterval * 1000; // Convert seconds to milliseconds
   console.error(`Setting up refresh timer: ${config.refreshInterval} seconds (${intervalMs}ms)`);
 
-  setInterval(refreshSources, intervalMs);
+  refreshTimer = setInterval(refreshSources, intervalMs);
+}
+
+/**
+ * Cleanup function for graceful shutdown
+ */
+function cleanup(): void {
+  console.error("Cleaning up resources...");
+
+  if (configWatcher) {
+    configWatcher.close();
+    configWatcher = null;
+  }
+
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 }
 
 async function main() {
-  try {
-    config = getConfig();
-    const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
-    console.error(`Loaded configuration from: ${configPath}`);
-    console.error(`Found ${config.sources.length} sources`);
-    console.error(`Refresh interval: ${config.refreshInterval} seconds`);
-
-    for (const source of config.sources) {
-      console.error(`  - ${source.name}: ${source.type === "http" ? "HTTP" : "File"} source`);
-    }
-  } catch (error) {
-    console.error("Configuration error:", error);
+  // Load initial configuration
+  const initialConfig = loadConfig();
+  if (!initialConfig) {
+    console.error("Failed to load initial configuration. Exiting.");
     if (!process.env.CONFIG_PATH) {
       console.error("\nTip: You can specify a custom config path using the CONFIG_PATH environment variable");
     }
     process.exit(1);
   }
+  config = initialConfig;
 
   // Initial parsing
   const { successCount, newParsedSpecs } = await parseAllSources();
@@ -212,6 +352,22 @@ async function main() {
 
   // Setup refresh timer
   setupRefreshTimer();
+
+  // Setup config file watcher
+  setupConfigWatcher();
+
+  // Setup graceful shutdown handlers
+  process.on("SIGINT", () => {
+    console.error("\nReceived SIGINT, shutting down gracefully...");
+    cleanup();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    console.error("\nReceived SIGTERM, shutting down gracefully...");
+    cleanup();
+    process.exit(0);
+  });
 
   const server = new McpServer({
     name: "swagger-mcp",
