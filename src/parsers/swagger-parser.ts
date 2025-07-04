@@ -13,8 +13,6 @@ import {
 import { SwaggerSource } from "../types/config.js";
 
 export class SwaggerParserModule {
-  private cache: Map<string, ParsedSwaggerSpec> = new Map();
-
   /**
    * Parses a Swagger/OpenAPI specification from a source
    * @param source The source configuration
@@ -23,16 +21,6 @@ export class SwaggerParserModule {
    */
   async parse(source: SwaggerSource, options: SwaggerParserOptions = {}): Promise<SwaggerParserResult> {
     try {
-      // Check cache first
-      const cacheKey = this.getCacheKey(source);
-      if (this.cache.has(cacheKey) && !options.continueOnError) {
-        return {
-          success: true,
-          spec: this.cache.get(cacheKey),
-          warnings: []
-        };
-      }
-
       let api: OpenAPIDocument;
 
       if (source.type === "file") {
@@ -51,9 +39,6 @@ export class SwaggerParserModule {
 
       // Convert to our format
       const parsedSpec = this.convertToInternalFormat(api, source.name);
-
-      // Cache the result
-      this.cache.set(cacheKey, parsedSpec);
 
       return {
         success: true,
@@ -281,30 +266,5 @@ export class SwaggerParserModule {
       source,
       details: error
     };
-  }
-
-  /**
-   * Gets a cache key for a source
-   */
-  private getCacheKey(source: SwaggerSource): string {
-    return `${source.name}:${source.source}`;
-  }
-
-  /**
-   * Clears the cache
-   */
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Removes a specific source from cache
-   */
-  invalidateCache(sourceName: string): void {
-    for (const [key, spec] of this.cache.entries()) {
-      if (spec.sourceName === sourceName) {
-        this.cache.delete(key);
-      }
-    }
   }
 }
