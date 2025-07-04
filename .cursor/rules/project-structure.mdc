@@ -1,0 +1,96 @@
+---
+alwaysApply: true
+---
+
+# Project Structure Guide
+
+## Overview
+
+The Swagger Navigator MCP is a Model Context Protocol server for intelligent discovery and search of Swagger/OpenAPI endpoints.
+
+## Key Entry Points
+
+- Main server: [index.ts](mdc:src/index.ts) - MCP server implementation with tools for API discovery
+- Configuration loader: [loader.ts](mdc:src/config/loader.ts) - Handles YAML config files with environment variable substitution
+- Environment utilities: [env-substitution.ts](mdc:src/utils/env-substitution.ts) - Secure environment variable substitution
+
+## Directory Structure
+
+```
+src/
+├── config/          # Configuration management
+│   └── loader.ts    # YAML config loading with env substitution
+├── parsers/         # API specification parsers
+│   └── swagger-parser.ts
+├── types/           # TypeScript type definitions
+│   ├── config.ts    # Configuration schemas and validation
+│   └── swagger.ts   # OpenAPI/Swagger type definitions
+├── utils/           # Utility functions
+│   └── env-substitution.ts  # Environment variable handling
+└── index.ts         # Main MCP server implementation
+
+tests/               # Mirror src/ structure for tests
+├── config/
+├── utils/
+└── setup.ts         # Jest test configuration
+```
+
+## Configuration Flow
+
+1. [loader.ts](mdc:src/config/loader.ts) reads CONFIG_PATH environment variable
+2. Loads YAML configuration file
+3. [env-substitution.ts](mdc:src/utils/env-substitution.ts) processes `${VAR}` placeholders
+4. [config.ts](mdc:src/types/config.ts) validates the configuration schema
+5. Runtime type detection enriches config with source types (http/file)
+
+## Security Considerations
+
+- Environment variables store sensitive data (API keys, tokens)
+- Configuration files should not contain secrets directly
+- Use `${VAR_NAME}` syntax for environment variable substitution
+# Project Structure Guide
+
+## Overview
+
+The Swagger Navigator MCP is a Model Context Protocol server for intelligent discovery and search of Swagger/OpenAPI endpoints.
+
+## Key Entry Points
+
+- Main server: [index.ts](mdc:src/index.ts) - MCP server implementation with tools for API discovery
+- Configuration loader: [loader.ts](mdc:src/config/loader.ts) - Handles YAML config files with environment variable substitution
+- Environment utilities: [env-substitution.ts](mdc:src/utils/env-substitution.ts) - Secure environment variable substitution
+
+## Directory Structure
+
+```
+src/
+├── config/          # Configuration management
+│   └── loader.ts    # YAML config loading with env substitution
+├── parsers/         # API specification parsers
+│   └── swagger-parser.ts
+├── types/           # TypeScript type definitions
+│   ├── config.ts    # Configuration schemas and validation
+│   └── swagger.ts   # OpenAPI/Swagger type definitions
+├── utils/           # Utility functions
+│   └── env-substitution.ts  # Environment variable handling
+└── index.ts         # Main MCP server implementation
+
+tests/               # Mirror src/ structure for tests
+├── config/
+├── utils/
+└── setup.ts         # Jest test configuration
+```
+
+## Configuration Flow
+
+1. [loader.ts](mdc:src/config/loader.ts) reads CONFIG_PATH environment variable
+2. Loads YAML configuration file
+3. [env-substitution.ts](mdc:src/utils/env-substitution.ts) processes `${VAR}` placeholders
+4. [config.ts](mdc:src/types/config.ts) validates the configuration schema
+5. Runtime type detection enriches config with source types (http/file)
+
+## Security Considerations
+
+- Environment variables store sensitive data (API keys, tokens)
+- Configuration files should not contain secrets directly
+- Use `${VAR_NAME}` syntax for environment variable substitution

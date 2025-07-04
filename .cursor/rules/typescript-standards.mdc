@@ -1,0 +1,167 @@
+---
+alwaysApply: true
+---
+
+# TypeScript Standards
+
+## Code Quality Guidelines
+
+- Use strict TypeScript configuration as defined in [tsconfig.json](mdc:tsconfig.json)
+- Prefer explicit type annotations for function parameters and return values
+- Use proper error handling with typed exceptions
+- Implement comprehensive input validation
+
+## Module Organization
+
+- Export functions and types explicitly
+- Use clear, descriptive names for functions and variables
+- Group related functionality in logical modules
+- Maintain consistent import/export patterns
+
+## Type Safety
+
+- Define interfaces for all data structures in [types/](mdc:src/types/)
+- Use discriminated unions for complex type scenarios
+- Avoid `any` type - use proper type definitions
+- Implement type guards where necessary
+
+## Error Handling
+
+```typescript
+// Good: Typed error handling
+function loadConfig(): Config {
+  try {
+    // ... loading logic
+  } catch (error) {
+    if (error instanceof yaml.YAMLException) {
+      throw new Error(`Invalid YAML in configuration file: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+// Good: Input validation
+function validatePath(path: string): string {
+  if (!path || typeof path !== "string") {
+    throw new Error("Invalid path provided");
+  }
+  return resolve(path);
+}
+```
+
+## Function Design
+
+- Keep functions focused and single-purpose
+- Use descriptive parameter names
+- Include JSDoc comments for complex functions
+- Return consistent data structures
+- Handle edge cases explicitly
+
+## Import/Export Patterns
+
+```typescript
+// Good: Explicit exports
+export { loadConfig, detectSourceType, enrichConfigWithTypes };
+
+// Good: Type-only imports when applicable
+import type { Config, SourceConfig } from "./types/config";
+import { readFileSync } from "fs";
+```
+
+## Constants and Configuration
+
+- Use UPPER_SNAKE_CASE for constants
+- Define configuration constants at module level
+- Use environment variables for runtime configuration
+- Avoid magic numbers and strings
+
+## Code Documentation
+
+- Use JSDoc for public APIs
+- Include examples in documentation
+- Document error scenarios
+- Explain complex business logic
+- Reference related modules and functions
+
+---
+
+# TypeScript Standards
+
+## Code Quality Guidelines
+
+- Use strict TypeScript configuration as defined in [tsconfig.json](mdc:tsconfig.json)
+- Prefer explicit type annotations for function parameters and return values
+- Use proper error handling with typed exceptions
+- Implement comprehensive input validation
+
+## Module Organization
+
+- Export functions and types explicitly
+- Use clear, descriptive names for functions and variables
+- Group related functionality in logical modules
+- Maintain consistent import/export patterns
+
+## Type Safety
+
+- Define interfaces for all data structures in [types/](mdc:src/types/)
+- Use discriminated unions for complex type scenarios
+- Avoid `any` type - use proper type definitions
+- Implement type guards where necessary
+
+## Error Handling
+
+```typescript
+// Good: Typed error handling
+function loadConfig(): Config {
+  try {
+    // ... loading logic
+  } catch (error) {
+    if (error instanceof yaml.YAMLException) {
+      throw new Error(`Invalid YAML in configuration file: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+// Good: Input validation
+function validatePath(path: string): string {
+  if (!path || typeof path !== "string") {
+    throw new Error("Invalid path provided");
+  }
+  return resolve(path);
+}
+```
+
+## Function Design
+
+- Keep functions focused and single-purpose
+- Use descriptive parameter names
+- Include JSDoc comments for complex functions
+- Return consistent data structures
+- Handle edge cases explicitly
+
+## Import/Export Patterns
+
+```typescript
+// Good: Explicit exports
+export { loadConfig, detectSourceType, enrichConfigWithTypes };
+
+// Good: Type-only imports when applicable
+import type { Config, SourceConfig } from "./types/config";
+import { readFileSync } from "fs";
+```
+
+## Constants and Configuration
+
+- Use UPPER_SNAKE_CASE for constants
+- Define configuration constants at module level
+- Use environment variables for runtime configuration
+- Avoid magic numbers and strings
+
+## Code Documentation
+
+- Use JSDoc for public APIs
+- Include examples in documentation
+- Document error scenarios
+- Explain complex business logic
+- Reference related modules and functions

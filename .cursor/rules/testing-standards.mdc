@@ -1,0 +1,131 @@
+---
+alwaysApply: true
+---
+
+# Testing Standards
+
+## Test Structure
+
+- All tests should be placed in the `tests/` directory, mirroring the `src/` structure
+- Test files must use `.test.ts` extension
+- Use descriptive `describe` and `it` blocks that clearly explain what is being tested
+
+## Coverage Requirements
+
+- Aim for 100% code coverage on utility modules like [env-substitution.ts](mdc:src/utils/env-substitution.ts)
+- All exported functions must have comprehensive test coverage
+- Test both happy path and error scenarios
+
+## Test Organization
+
+```typescript
+describe("moduleName", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  describe("functionName", () => {
+    it("should handle expected behavior", () => {
+      // Test implementation
+    });
+
+    it("should handle error cases", () => {
+      // Error test implementation
+    });
+  });
+});
+```
+
+## Mocking Guidelines
+
+- Mock external dependencies (fs, yaml, etc.) using Jest mocks
+- Use typed mocks: `const mockFunction = fn as jest.MockedFunction<typeof fn>`
+- Always restore original environment variables and mocks between tests
+- Test integration flows by mocking at appropriate boundaries
+
+## Required Test Types
+
+1. **Unit Tests**: Test individual functions in isolation
+2. **Integration Tests**: Test function interactions
+3. **Error Handling**: Test all error paths and edge cases
+4. **Environment Variable Tests**: Test env var substitution and validation
+5. **Path Resolution Tests**: Test relative/absolute path handling
+
+## Test Naming Conventions
+
+- Use descriptive test names that explain the scenario
+- Follow pattern: "should [expected behavior] when [condition]"
+- Group related tests using nested `describe` blocks
+
+---
+
+# Testing Standards
+
+## Test Structure
+
+- All tests should be placed in the `tests/` directory, mirroring the `src/` structure
+- Test files must use `.test.ts` extension
+- Use descriptive `describe` and `it` blocks that clearly explain what is being tested
+
+## Coverage Requirements
+
+- Aim for 100% code coverage on utility modules like [env-substitution.ts](mdc:src/utils/env-substitution.ts)
+- All exported functions must have comprehensive test coverage
+- Test both happy path and error scenarios
+
+## Test Organization
+
+```typescript
+describe("moduleName", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  describe("functionName", () => {
+    it("should handle expected behavior", () => {
+      // Test implementation
+    });
+
+    it("should handle error cases", () => {
+      // Error test implementation
+    });
+  });
+});
+```
+
+## Mocking Guidelines
+
+- Mock external dependencies (fs, yaml, etc.) using Jest mocks
+- Use typed mocks: `const mockFunction = fn as jest.MockedFunction<typeof fn>`
+- Always restore original environment variables and mocks between tests
+- Test integration flows by mocking at appropriate boundaries
+
+## Required Test Types
+
+1. **Unit Tests**: Test individual functions in isolation
+2. **Integration Tests**: Test function interactions
+3. **Error Handling**: Test all error paths and edge cases
+4. **Environment Variable Tests**: Test env var substitution and validation
+5. **Path Resolution Tests**: Test relative/absolute path handling
+
+## Test Naming Conventions
+
+- Use descriptive test names that explain the scenario
+- Follow pattern: "should [expected behavior] when [condition]"
+- Group related tests using nested `describe` blocks
