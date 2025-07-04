@@ -1,7 +1,0 @@
-# Test Configuration for Environment Variable
-
-sources:
-  - name: "test-api"
-    source: "./test/example-swagger.json"
-    description: "Test API from custom config path"
-    tags: ["test", "custom-path"] 

@@ -1,11 +1,11 @@
 {
-  "name": "swagger-mcp",
+  "name": "swagger-navigator-mcp",
   "version": "1.0.0",
-  "description": "",
+  "description": "An MCP server for intelligent discovery and search of Swagger/OpenAPI endpoints with fuzzy matching and natural language queries",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "swagger-mcp": "./dist/index.js"
+    "swagger-navigator-mcp": "./dist/index.js"
   },
   "files": [
     "dist/**/*"
@@ -22,15 +22,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aaydin-tr/swagger-mcp.git"
+    "url": "git+https://github.com/aaydin-tr/swagger-navigator-mcp.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/aaydin-tr/swagger-mcp/issues"
+    "url": "https://github.com/aaydin-tr/swagger-navigator-mcp/issues"
   },
-  "homepage": "https://github.com/aaydin-tr/swagger-mcp#readme",
+  "homepage": "https://github.com/aaydin-tr/swagger-navigator-mcp#readme",
   "devDependencies": {
     "@types/node": "^24.0.3",
     "nodemon": "^3.1.10",

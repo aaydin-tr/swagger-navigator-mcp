@@ -367,7 +367,7 @@ async function main() {
   });
 
   const server = new McpServer({
-    name: "swagger-mcp",
+    name: "swagger-navigator-mcp",
     version: "1.0.0"
   });
 
