@@ -9,31 +9,42 @@ import { ExtendedParsedEndpoint, OpenAPIInfo, SwaggerParserResult } from "@app-t
 import { z } from "zod";
 import Fuse from "fuse.js";
 
-async function main() {
-  let config: SwaggerMCPConfig;
-  const parser = new SwaggerParserModule();
-  const parsedSpecs = new Map<string, SwaggerParserResult>();
+// Global state
+let config: SwaggerMCPConfig;
+const parser = new SwaggerParserModule();
+const parsedSpecs = new Map<string, SwaggerParserResult>();
+let allEndpoints: ExtendedParsedEndpoint[] = [];
+let fuseEndpoints: Fuse<ExtendedParsedEndpoint>;
 
-  try {
-    config = getConfig();
-    const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
-    console.error(`Loaded configuration from: ${configPath}`);
-    console.error(`Found ${config.sources.length} sources`);
+// Concurrency control
+let isRefreshing = false;
+let refreshPromise: Promise<void> = Promise.resolve();
 
-    for (const source of config.sources) {
-      console.error(`  - ${source.name}: ${source.type === "http" ? "HTTP" : "File"} source`);
-    }
-  } catch (error) {
-    console.error("Configuration error:", error);
-    if (!process.env.CONFIG_PATH) {
-      console.error("\nTip: You can specify a custom config path using the CONFIG_PATH environment variable");
-    }
-    process.exit(1);
+/**
+ * Waits for any ongoing refresh to complete
+ */
+async function waitForRefreshComplete(): Promise<void> {
+  if (isRefreshing) {
+    console.error("Tool call waiting for refresh to complete...");
+    await refreshPromise;
   }
+}
 
+/**
+ * Parses all Swagger sources and updates the global parsedSpecs map
+ * @returns Object with success and error counts and the new parsed specs
+ */
+async function parseAllSources(): Promise<{
+  successCount: number;
+  errorCount: number;
+  newParsedSpecs: Map<string, SwaggerParserResult>;
+}> {
   console.error("Parsing Swagger sources...");
   let successCount = 0;
   let errorCount = 0;
+
+  // Create new map instead of clearing the global one
+  const newParsedSpecs = new Map<string, SwaggerParserResult>();
 
   for (const source of config.sources) {
     try {
@@ -41,13 +52,13 @@ async function main() {
       const parseResult = await parser.parse(source);
 
       if (parseResult.success && parseResult.spec) {
-        parsedSpecs.set(source.name, parseResult);
+        newParsedSpecs.set(source.name, parseResult);
         successCount++;
         console.error(`  ✓ ${source.name} parsed successfully`);
       } else {
         errorCount++;
         console.error(`  ✗ ${source.name} failed to parse: ${parseResult.errors?.[0]?.details || "Unknown error"}`);
-        parsedSpecs.set(source.name, {
+        newParsedSpecs.set(source.name, {
           errors: parseResult.errors,
           success: false
         });
@@ -55,7 +66,7 @@ async function main() {
     } catch (error) {
       errorCount++;
       console.error(`  ✗ ${source.name} failed to parse: ${error}`);
-      parsedSpecs.set(source.name, {
+      newParsedSpecs.set(source.name, {
         errors: [
           {
             details: error instanceof Error ? error.message : "Unknown error",
@@ -69,18 +80,24 @@ async function main() {
   }
 
   console.error(`Parsing complete: ${successCount} successful, ${errorCount} failed`);
+  return { successCount, errorCount, newParsedSpecs };
+}
 
-  if (successCount === 0) {
-    console.error("No sources were successfully parsed. Exiting.");
-    process.exit(1);
-  }
-
-  const allEndpoints: ExtendedParsedEndpoint[] = Array.from(parsedSpecs.values()).flatMap(
+/**
+ * Creates a new Fuse search index from the given parsed specs
+ */
+function createFuseIndex(specs: Map<string, SwaggerParserResult>): {
+  endpoints: ExtendedParsedEndpoint[];
+  fuse: Fuse<ExtendedParsedEndpoint>;
+} {
+  // Create new endpoints array
+  const endpoints: ExtendedParsedEndpoint[] = Array.from(specs.values()).flatMap(
     (spec) =>
       spec.spec?.endpoints.map((endpoint) => ({ ...endpoint, source_name: spec.spec?.sourceName || "Unknown" })) || []
   );
 
-  const fuseEndpoints = new Fuse(allEndpoints, {
+  // Create new Fuse search index
+  const fuse = new Fuse(endpoints, {
     includeScore: true,
     shouldSort: true,
     keys: [
@@ -93,6 +110,108 @@ async function main() {
     ],
     threshold: config.search.fuzzyThreshold
   });
+
+  return { endpoints, fuse };
+}
+
+/**
+ * Updates the global endpoints array and recreates the Fuse search index
+ * This is used for initial setup when no concurrency protection is needed
+ */
+function updateFuseIndex(): void {
+  const { endpoints, fuse } = createFuseIndex(parsedSpecs);
+  allEndpoints = endpoints;
+  fuseEndpoints = fuse;
+  console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+}
+
+/**
+ * Performs a complete refresh of all sources and search index with atomic updates
+ */
+async function refreshSources(): Promise<void> {
+  console.error(`[${new Date().toISOString()}] Starting scheduled refresh...`);
+
+  // Set refresh flag and create new promise for waiting tool calls
+  isRefreshing = true;
+  let resolveRefresh: () => void;
+  refreshPromise = new Promise<void>((resolve) => {
+    resolveRefresh = resolve;
+  });
+
+  try {
+    const { successCount, errorCount, newParsedSpecs } = await parseAllSources();
+
+    if (successCount > 0) {
+      // Create new search index from new specs
+      const { endpoints, fuse } = createFuseIndex(newParsedSpecs);
+
+      // Atomic update: swap all global state at once
+      parsedSpecs.clear();
+      newParsedSpecs.forEach((value, key) => parsedSpecs.set(key, value));
+      allEndpoints = endpoints;
+      fuseEndpoints = fuse;
+
+      console.error(
+        `[${new Date().toISOString()}] Refresh completed: ${successCount} successful, ${errorCount} failed`
+      );
+      console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+    } else {
+      console.error(`[${new Date().toISOString()}] Refresh failed: No sources were successfully parsed`);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Refresh error:`, error);
+  } finally {
+    // Always clear the refresh flag and resolve waiting promises
+    isRefreshing = false;
+    resolveRefresh!();
+  }
+}
+
+/**
+ * Sets up the refresh interval timer
+ */
+function setupRefreshTimer(): void {
+  const intervalMs = config.refreshInterval * 1000; // Convert seconds to milliseconds
+  console.error(`Setting up refresh timer: ${config.refreshInterval} seconds (${intervalMs}ms)`);
+
+  setInterval(refreshSources, intervalMs);
+}
+
+async function main() {
+  try {
+    config = getConfig();
+    const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
+    console.error(`Loaded configuration from: ${configPath}`);
+    console.error(`Found ${config.sources.length} sources`);
+    console.error(`Refresh interval: ${config.refreshInterval} seconds`);
+
+    for (const source of config.sources) {
+      console.error(`  - ${source.name}: ${source.type === "http" ? "HTTP" : "File"} source`);
+    }
+  } catch (error) {
+    console.error("Configuration error:", error);
+    if (!process.env.CONFIG_PATH) {
+      console.error("\nTip: You can specify a custom config path using the CONFIG_PATH environment variable");
+    }
+    process.exit(1);
+  }
+
+  // Initial parsing
+  const { successCount, newParsedSpecs } = await parseAllSources();
+
+  if (successCount === 0) {
+    console.error("No sources were successfully parsed. Exiting.");
+    process.exit(1);
+  }
+
+  // Update global state with parsed specs
+  newParsedSpecs.forEach((value, key) => parsedSpecs.set(key, value));
+
+  // Initialize search index
+  updateFuseIndex();
+
+  // Setup refresh timer
+  setupRefreshTimer();
 
   const server = new McpServer({
     name: "swagger-mcp",
@@ -146,6 +265,8 @@ async function main() {
       }
     },
     async () => {
+      await waitForRefreshComplete();
+
       const sources: { name: string; description: string; info: OpenAPIInfo }[] = [];
       parsedSpecs.forEach((value, key) => {
         const info = { title: "Unknown", version: "Unknown", ...value.spec?.info };
@@ -249,6 +370,8 @@ async function main() {
       }
     },
     async (input) => {
+      await waitForRefreshComplete();
+
       const sourceName = input.request.name;
       const limit = input.request.limit;
       const offset = input.request.offset;
@@ -356,6 +479,8 @@ async function main() {
       }
     },
     async (input) => {
+      await waitForRefreshComplete();
+
       const query = input.request.query;
       const result = fuseEndpoints.search(query);
       const endpoints = result?.map((r) => r.item) || [];
