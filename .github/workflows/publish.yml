@@ -57,11 +57,8 @@ jobs:
       - name: "Build"
         run: npm run build
 
-      - name: "Authenticate with npm"
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
-          npm whoami
-
       - name: "Publish"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm publish --access=public --registry=https://registry.npmjs.org --no-git-checks
