@@ -216,31 +216,6 @@ export class SwaggerParserModule {
       warnings.push("Missing API version in info section");
     }
 
-    // Check for endpoints without operationId
-    let endpointsWithoutId = 0;
-    if (api.paths) {
-      for (const pathItem of Object.values(api.paths)) {
-        if (!pathItem) continue;
-
-        const isV2 = "swagger" in api && api.swagger === "2.0";
-        const methods = isV2
-          ? (["get", "post", "put", "delete", "patch", "head", "options"] as const)
-          : (["get", "post", "put", "delete", "patch", "head", "options", "trace"] as const);
-
-        for (const method of methods) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const operation = (pathItem as any)[method];
-          if (operation && !operation.operationId) {
-            endpointsWithoutId++;
-          }
-        }
-      }
-    }
-
-    if (endpointsWithoutId > 0) {
-      warnings.push(`${endpointsWithoutId} endpoints lack operationId`);
-    }
-
     return warnings;
   }
 
