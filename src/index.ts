@@ -43,7 +43,7 @@ async function waitForRefreshComplete(): Promise<void> {
 function loadConfig(): SwaggerMCPConfig | null {
   try {
     const newConfig = getConfig();
-    const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
+    const configPath = process.env.CONFIG_PATH!;
     console.error(`[${new Date().toISOString()}] Loaded configuration from: ${configPath}`);
     console.error(`Found ${newConfig.sources.length} sources`);
     console.error(`Refresh interval: ${newConfig.refreshInterval} seconds`);
@@ -262,7 +262,7 @@ async function handleConfigChange(): Promise<void> {
  * Sets up file watching for the config file
  */
 function setupConfigWatcher(): void {
-  const configPath = process.env.CONFIG_PATH || "swagger-mcp.config.yaml";
+  const configPath = process.env.CONFIG_PATH!;
   const absoluteConfigPath = path.resolve(configPath);
 
   try {
@@ -329,9 +329,6 @@ async function main() {
   const initialConfig = loadConfig();
   if (!initialConfig) {
     console.error("Failed to load initial configuration. Exiting.");
-    if (!process.env.CONFIG_PATH) {
-      console.error("\nTip: You can specify a custom config path using the CONFIG_PATH environment variable");
-    }
     process.exit(1);
   }
   config = initialConfig;

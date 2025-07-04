@@ -4,23 +4,25 @@ import * as yaml from "js-yaml";
 import { SwaggerMCPConfig, validateConfig, SwaggerSource, Config } from "../types/config.js";
 import { substituteEnvVarsInObject } from "../utils/env-substitution.js";
 
-const DEFAULT_CONFIG_FILE_NAME = "swagger-mcp.config.yaml";
 const CONFIG_PATH_ENV_VAR = "CONFIG_PATH";
 
 /**
- * Gets the configuration file path from environment variable or defaults to standard name
+ * Gets the configuration file path from environment variable
  * @returns The resolved configuration file path
+ * @throws Error if CONFIG_PATH environment variable is not set
  */
 function getConfigPath(): string {
   const envConfigPath = process.env[CONFIG_PATH_ENV_VAR];
 
-  if (envConfigPath) {
-    // If path is provided via env var, use it as-is (can be absolute or relative)
-    return resolve(envConfigPath);
+  if (!envConfigPath) {
+    throw new Error(
+      `${CONFIG_PATH_ENV_VAR} environment variable is required.\n` +
+        `Please set CONFIG_PATH to the path of your configuration file.`
+    );
   }
 
-  // Default behavior: look for config file in current working directory
-  return resolve(process.cwd(), DEFAULT_CONFIG_FILE_NAME);
+  // Use the provided path as-is (can be absolute or relative)
+  return resolve(envConfigPath);
 }
 
 /**
@@ -32,13 +34,9 @@ export function loadConfig(): Config {
   const configPath = getConfigPath();
 
   if (!existsSync(configPath)) {
-    const envMessage = process.env[CONFIG_PATH_ENV_VAR]
-      ? ` (specified via ${CONFIG_PATH_ENV_VAR})`
-      : ` (default location)`;
-
     throw new Error(
-      `Configuration file not found: ${configPath}${envMessage}\n` +
-        `Please create a configuration file or set ${CONFIG_PATH_ENV_VAR} environment variable.`
+      `Configuration file not found: ${configPath} (specified via ${CONFIG_PATH_ENV_VAR})\n` +
+        `Please create the configuration file at the specified path.`
     );
   }
 
