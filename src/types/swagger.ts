@@ -6,15 +6,10 @@ export type OpenAPIInfo = OpenAPIV3.InfoObject | OpenAPIV3_1.InfoObject | OpenAP
 export type OpenAPIServer = OpenAPIV3.ServerObject | OpenAPIV3_1.ServerObject;
 export type OpenAPIParameter = OpenAPI.Parameter;
 export type OpenAPIRequestBody = OpenAPIV3.RequestBodyObject | OpenAPIV3_1.RequestBodyObject;
-export type OpenAPIResponse = OpenAPIV3.ResponseObject | OpenAPIV3_1.ResponseObject | OpenAPIV2.ResponseObject;
+
 export type OpenAPIOperation = OpenAPI.Operation;
 export type OpenAPIPathItem = OpenAPIV3.PathItemObject | OpenAPIV3_1.PathItemObject | OpenAPIV2.PathItemObject;
 export type OpenAPIComponents = OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject;
-export type OpenAPISecurityScheme =
-  | OpenAPIV3.SecuritySchemeObject
-  | OpenAPIV3_1.SecuritySchemeObject
-  | OpenAPIV2.SecuritySchemeObject;
-export type OpenAPISchema = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject | OpenAPIV2.SchemaObject;
 
 // Custom types for our parser
 export interface ParsedEndpoint {
@@ -55,20 +50,10 @@ export interface SwaggerParseError {
   source: string;
 }
 
-export interface SwaggerParserOptions {
-  validateSpec?: boolean;
-  resolveReferences?: boolean;
-  dereference?: boolean;
-  continueOnError?: boolean;
-  timeout?: number;
-  headers?: Record<string, string>;
-}
-
 export interface SwaggerParserResult {
   success: boolean;
   spec?: ParsedSwaggerSpec;
   errors?: SwaggerParseError[];
-  warnings?: string[];
 }
 
 export type ExtendedParsedEndpoint = ParsedEndpoint & {

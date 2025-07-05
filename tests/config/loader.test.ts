@@ -1,13 +1,7 @@
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import * as yaml from "js-yaml";
-import {
-  loadConfig,
-  detectSourceType,
-  enrichConfigWithTypes,
-  getConfig,
-  createSampleConfig
-} from "../../src/config/loader";
+import { loadConfig, detectSourceType, enrichConfigWithTypes, getConfig } from "../../src/config/loader";
 import { validateConfig } from "../../src/types/config";
 import { substituteEnvVarsInObject } from "../../src/utils/env-substitution";
 
@@ -503,85 +497,6 @@ describe("config/loader", () => {
       expect(() => getConfig()).toThrow(
         "CONFIG_PATH environment variable is required.\nPlease set CONFIG_PATH to the path of your configuration file."
       );
-    });
-  });
-
-  describe("createSampleConfig", () => {
-    it("should throw error when no path provided and CONFIG_PATH not set", () => {
-      delete process.env.CONFIG_PATH;
-
-      expect(() => createSampleConfig()).toThrow(
-        "CONFIG_PATH environment variable is required.\nPlease set CONFIG_PATH to the path of your configuration file."
-      );
-    });
-
-    it("should use CONFIG_PATH when no path provided", () => {
-      // This test verifies the path resolution logic without mocking fs
-      process.env.CONFIG_PATH = "./default-config.yaml";
-      const expectedPath = resolve("./default-config.yaml");
-
-      // We can't easily test the actual file writing due to the dynamic require,
-      // but we can test that the function doesn't throw when CONFIG_PATH is set
-      expect(() => {
-        try {
-          createSampleConfig();
-        } catch (error) {
-          // If it's a file system error, that's expected in test environment
-          // We only want to catch configuration path errors
-          if (error instanceof Error && error.message.includes("CONFIG_PATH")) {
-            throw error;
-          }
-          // Ignore other errors (like file system errors) as they're expected
-        }
-      }).not.toThrow(/CONFIG_PATH/);
-    });
-
-    it("should use provided path when specified", () => {
-      const customPath = "/custom/path/config.yaml";
-
-      // Similar to above - we test that it doesn't throw configuration errors
-      expect(() => {
-        try {
-          createSampleConfig(customPath);
-        } catch (error) {
-          // If it's a file system error, that's expected in test environment
-          // We only want to catch configuration path errors
-          if (error instanceof Error && error.message.includes("CONFIG_PATH")) {
-            throw error;
-          }
-          // Ignore other errors (like file system errors) as they're expected
-        }
-      }).not.toThrow(/CONFIG_PATH/);
-    });
-
-    it("should generate expected sample configuration content structure", () => {
-      // Test the sample configuration template by extracting it from the function
-      // Since we can't mock the internal require easily, we'll test the logic indirectly
-
-      // The sample config template is defined inline in the function
-      // We can verify the template structure by checking the source code
-      const expectedContent = [
-        "# Swagger MCP Server Configuration",
-        "sources:",
-        'name: "local-api"',
-        'source: "./swagger/api.json"',
-        'name: "remote-api"',
-        'source: "https://api.example.com/swagger.json"',
-        'Authorization: "Bearer \\${API_TOKEN}"',
-        "tags:",
-        "# search:",
-        "fuzzyThreshold: 0.6"
-      ];
-
-      // Read the source function to verify it contains the expected template structure
-      const functionSource = createSampleConfig.toString();
-
-      expectedContent.forEach((content) => {
-        expect(functionSource).toContain(content);
-      });
-
-      // Verify environment variable placeholder
-      expect(functionSource).toContain("\\${API_TOKEN}");
     });
   });
 });

@@ -5,7 +5,6 @@ import {
   ParsedSwaggerSpec,
   ParsedEndpoint,
   SwaggerParseError,
-  SwaggerParserOptions,
   SwaggerParserResult,
   OpenAPIPathItem,
   OpenAPIOperation,
@@ -19,7 +18,7 @@ export class SwaggerParserModule {
    * @param options Parser options
    * @returns Parsed specification result
    */
-  async parse(source: SwaggerSource, options: SwaggerParserOptions = {}): Promise<SwaggerParserResult> {
+  async parse(source: SwaggerSource): Promise<SwaggerParserResult> {
     try {
       let api: OpenAPIDocument;
 
@@ -28,13 +27,8 @@ export class SwaggerParserModule {
         api = (await SwaggerParser.validate(source.source)) as unknown as OpenAPIDocument;
       } else {
         // For HTTP sources, fetch the content first
-        const content = await this.fetchHttpContent(source, options);
+        const content = await this.fetchHttpContent(source);
         api = (await SwaggerParser.validate(content)) as unknown as OpenAPIDocument;
-      }
-
-      // If dereference is requested, apply it
-      if (options.dereference) {
-        api = (await SwaggerParser.dereference(api)) as unknown as OpenAPIDocument;
       }
 
       // Convert to our format
@@ -42,8 +36,7 @@ export class SwaggerParserModule {
 
       return {
         success: true,
-        spec: parsedSpec,
-        warnings: this.detectWarnings(api)
+        spec: parsedSpec
       };
     } catch (error) {
       return {
@@ -56,14 +49,11 @@ export class SwaggerParserModule {
   /**
    * Fetches content from an HTTP source
    */
-  private async fetchHttpContent(
-    source: SwaggerSource,
-    options: SwaggerParserOptions
-  ): Promise<string | OpenAPIDocument> {
+  private async fetchHttpContent(source: SwaggerSource): Promise<string | OpenAPIDocument> {
     try {
       const response = await axios.get(source.source, {
         headers: source.headers,
-        timeout: options.timeout || 30000,
+        timeout: 30000,
         validateStatus: (status) => status < 400
       });
 
@@ -199,24 +189,6 @@ export class SwaggerParserModule {
     }
 
     return endpoint;
-  }
-
-  /**
-   * Detects potential warnings in the specification
-   */
-  private detectWarnings(api: OpenAPIDocument): string[] {
-    const warnings: string[] = [];
-
-    // Check for missing info
-    if (!api.info?.title) {
-      warnings.push("Missing API title in info section");
-    }
-
-    if (!api.info?.version) {
-      warnings.push("Missing API version in info section");
-    }
-
-    return warnings;
   }
 
   /**

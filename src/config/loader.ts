@@ -115,38 +115,3 @@ export function getConfig(): SwaggerMCPConfig {
   const config = loadConfig();
   return enrichConfigWithTypes(config);
 }
-
-/**
- * Creates a sample configuration file
- * @param path Optional path to create the file at
- */
-export function createSampleConfig(path?: string): void {
-  const configPath = path || getConfigPath();
-
-  const sampleConfig = `# Swagger MCP Server Configuration
-
-# List of Swagger/OpenAPI sources
-sources:
-  # Example: Local file source
-  - name: "local-api"
-    source: "./swagger/api.json"
-    description: "Local API documentation"
-    tags: ["local", "development"]
-
-  # Example: HTTP source with authentication
-  - name: "remote-api"
-    source: "https://api.example.com/swagger.json"
-    description: "Remote API with authentication"
-    headers:
-      Authorization: "Bearer \${API_TOKEN}"
-    tags: ["remote", "production"]
-
-# Optional: Search configuration
-# search:
-#   fuzzyThreshold: 0.6  # 0-1, lower = more fuzzy
-#   maxResults: 50
-`;
-
-  require("fs").writeFileSync(configPath, sampleConfig);
-  console.log(`Sample configuration created at: ${configPath}`);
-}

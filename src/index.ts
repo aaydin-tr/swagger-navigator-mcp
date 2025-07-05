@@ -15,7 +15,6 @@ import { SwaggerParserModule } from "@parsers/swagger-parser.js";
 let config: SwaggerMCPConfig;
 const parser = new SwaggerParserModule();
 const parsedSpecs = new Map<string, SwaggerParserResult>();
-let allEndpoints: ExtendedParsedEndpoint[] = [];
 let fuseEndpoints: Fuse<ExtendedParsedEndpoint>;
 
 // Concurrency control
@@ -149,9 +148,8 @@ function createFuseIndex(specs: Map<string, SwaggerParserResult>): {
  */
 function updateFuseIndex(): void {
   const { endpoints, fuse } = createFuseIndex(parsedSpecs);
-  allEndpoints = endpoints;
   fuseEndpoints = fuse;
-  console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+  console.error(`Updated search index with ${endpoints.length} endpoints`);
 }
 
 /**
@@ -177,13 +175,12 @@ async function refreshSources(): Promise<void> {
       // Atomic update: swap all global state at once
       parsedSpecs.clear();
       newParsedSpecs.forEach((value, key) => parsedSpecs.set(key, value));
-      allEndpoints = endpoints;
       fuseEndpoints = fuse;
 
       console.error(
         `[${new Date().toISOString()}] Refresh completed: ${successCount} successful, ${errorCount} failed`
       );
-      console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+      console.error(`Updated search index with ${endpoints.length} endpoints`);
     } else {
       console.error(`[${new Date().toISOString()}] Refresh failed: No sources were successfully parsed`);
     }
@@ -239,13 +236,12 @@ async function handleConfigChange(): Promise<void> {
       // Atomic update: swap all global state at once
       parsedSpecs.clear();
       newParsedSpecs.forEach((value, key) => parsedSpecs.set(key, value));
-      allEndpoints = endpoints;
       fuseEndpoints = fuse;
 
       console.error(
         `[${new Date().toISOString()}] Config reload completed: ${successCount} successful, ${errorCount} failed`
       );
-      console.error(`Updated search index with ${allEndpoints.length} endpoints`);
+      console.error(`Updated search index with ${endpoints.length} endpoints`);
     } else {
       console.error(`[${new Date().toISOString()}] Config reload failed: No sources were successfully parsed`);
     }

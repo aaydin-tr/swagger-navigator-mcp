@@ -19,11 +19,9 @@ export const configSchema = z.object({
   refreshInterval: z.number().positive().optional().default(300) // 5 minutes
 });
 
-export type SwaggerSourceConfig = z.infer<typeof swaggerSourceSchema>;
-export type SearchConfig = z.infer<typeof searchConfigSchema>;
 export type Config = z.infer<typeof configSchema>;
 
-export type SwaggerSource = SwaggerSourceConfig & {
+export type SwaggerSource = z.infer<typeof swaggerSourceSchema> & {
   type: "file" | "http";
 };
 
@@ -39,8 +37,7 @@ export function validateConfig(config: unknown): Config {
     const uniqueNames = new Set(sourceNames);
 
     if (sourceNames.length !== uniqueNames.size) {
-      const duplicates = sourceNames.filter((name, index) => sourceNames.indexOf(name) !== index);
-      throw new Error(`Duplicate source names found: ${duplicates.join(", ")}`);
+      throw new Error("Duplicate source names found in configuration");
     }
 
     return parsed;
