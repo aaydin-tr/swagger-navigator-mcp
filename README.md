@@ -13,7 +13,7 @@ An MCP server implementation that provides intelligent discovery and search capa
 The Swagger Navigator MCP Server acts as an intelligent API knowledge hub, seamlessly connecting developers with their API specifications. When you ask Cursor/Claude/LLMs to generate API clients, anticorruption layers, or type definitions, Cursor/Claude/LLMs consults the MCP server to get accurate, structured API information and then generates perfect code based on the actual API schema.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[👨‍💻 Developer] -->|"💬 Generate API client<br/>for /users endpoint"| B[🎯 Cursor/IDE/LLMs]
     B -->|"🔍 Query: What is<br/>/users endpoint?"| C[🚀 Swagger Navigator MCP Server]
     C -->|"📊 Returns endpoint<br/>schema & structure"| B
