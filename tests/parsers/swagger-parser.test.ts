@@ -2,12 +2,7 @@ import SwaggerParser from "@apidevtools/swagger-parser";
 import axios from "axios";
 import { SwaggerParserModule } from "../../src/parsers/swagger-parser";
 import { SwaggerSource } from "../../src/types/config";
-import {
-  ParsedSwaggerSpec,
-  SwaggerParserResult,
-  SwaggerParseError,
-  OpenAPIDocument
-} from "../../src/types/swagger";
+import { OpenAPIDocument } from "../../src/types/swagger";
 
 // Mock dependencies
 jest.mock("@apidevtools/swagger-parser");
@@ -81,7 +76,7 @@ describe("parsers/swagger-parser", () => {
         description: "Test HTTP source",
         type: "http",
         headers: {
-          "Authorization": "Bearer token"
+          Authorization: "Bearer token"
         }
       };
 
@@ -135,14 +130,11 @@ describe("parsers/swagger-parser", () => {
       expect(result.spec!.endpoints[0].path).toBe("/posts");
       expect(result.spec!.endpoints[0].method).toBe("POST");
       expect(result.spec!.sourceName).toBe("test-http");
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        httpSource.source,
-        {
-          headers: httpSource.headers,
-          timeout: 30000,
-          validateStatus: expect.any(Function)
-        }
-      );
+      expect(mockAxios.get).toHaveBeenCalledWith(httpSource.source, {
+        headers: httpSource.headers,
+        timeout: 30000,
+        validateStatus: expect.any(Function)
+      });
     });
 
     it("should handle file validation errors", async () => {
@@ -244,7 +236,7 @@ describe("parsers/swagger-parser", () => {
         description: "Test HTTP source",
         type: "http",
         headers: {
-          "Authorization": "Bearer token"
+          Authorization: "Bearer token"
         }
       };
 
@@ -256,14 +248,11 @@ describe("parsers/swagger-parser", () => {
 
       // Verify
       expect(result).toEqual(mockData);
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        httpSource.source,
-        {
-          headers: httpSource.headers,
-          timeout: 30000,
-          validateStatus: expect.any(Function)
-        }
-      );
+      expect(mockAxios.get).toHaveBeenCalledWith(httpSource.source, {
+        headers: httpSource.headers,
+        timeout: 30000,
+        validateStatus: expect.any(Function)
+      });
     });
 
     it("should handle JSON string responses", async () => {
@@ -325,9 +314,7 @@ describe("parsers/swagger-parser", () => {
       mockAxios.get.mockRejectedValue(axiosError);
 
       // Execute & Verify
-      await expect((swaggerParser as any).fetchHttpContent(httpSource))
-        .rejects
-        .toThrow("HTTP 404: Not Found");
+      await expect((swaggerParser as any).fetchHttpContent(httpSource)).rejects.toThrow("HTTP 404: Not Found");
     });
 
     it("should handle network errors", async () => {
@@ -348,9 +335,9 @@ describe("parsers/swagger-parser", () => {
       mockAxios.get.mockRejectedValue(axiosError);
 
       // Execute & Verify
-      await expect((swaggerParser as any).fetchHttpContent(httpSource))
-        .rejects
-        .toThrow("Network error: No response received");
+      await expect((swaggerParser as any).fetchHttpContent(httpSource)).rejects.toThrow(
+        "Network error: No response received"
+      );
     });
 
     it("should handle request configuration errors", async () => {
@@ -371,9 +358,9 @@ describe("parsers/swagger-parser", () => {
       mockAxios.get.mockRejectedValue(axiosError);
 
       // Execute & Verify
-      await expect((swaggerParser as any).fetchHttpContent(httpSource))
-        .rejects
-        .toThrow("Request error: Request configuration error");
+      await expect((swaggerParser as any).fetchHttpContent(httpSource)).rejects.toThrow(
+        "Request error: Request configuration error"
+      );
     });
 
     it("should handle unknown errors", async () => {
@@ -390,9 +377,7 @@ describe("parsers/swagger-parser", () => {
       mockAxios.get.mockRejectedValue(unknownError);
 
       // Execute & Verify
-      await expect((swaggerParser as any).fetchHttpContent(httpSource))
-        .rejects
-        .toThrow("Request error: Unknown error");
+      await expect((swaggerParser as any).fetchHttpContent(httpSource)).rejects.toThrow("Request error: Unknown error");
     });
   });
 
@@ -513,25 +498,6 @@ describe("parsers/swagger-parser", () => {
       expect(result.components).toBeUndefined();
       expect(result.sourceName).toBe("test-source");
       expect(result.endpoints).toHaveLength(1);
-    });
-
-    it("should handle documents with no paths", () => {
-      // Setup
-      const openApiDoc: OpenAPIDocument = {
-        openapi: "3.0.0",
-        info: {
-          title: "Test API",
-          version: "1.0.0"
-        },
-        paths: {},
-        components: {}
-      } as OpenAPIDocument;
-
-      // Execute
-      const result = (swaggerParser as any).convertToInternalFormat(openApiDoc, "test-source");
-
-      // Verify
-      expect(result.endpoints).toHaveLength(0);
     });
 
     it("should handle documents with empty paths", () => {
