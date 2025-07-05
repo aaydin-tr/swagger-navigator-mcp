@@ -1,6 +1,6 @@
 # 🔍 Swagger Navigator MCP Server
 
-[![License: Apache](https://img.shields.io/badge/License-Apache-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org)
 
@@ -12,34 +12,19 @@ An MCP server implementation that provides intelligent discovery and search capa
 
 ```mermaid
 flowchart TD
-    A[👨‍💻 Developer] --> B["Hey Cursor/Claude/LLMs, generate API client for /users endpoint"]
-
-    B --> C[🎯 Cursor/Claude/LLMs]
-    C --> D["queries: What is /users endpoint?"]
-
-    D --> E[🚀 Swagger Navigator MCP Server]
-    E --> F[🔍 Searches configured API sources]
-    F --> G[📊 Finds /users endpoint schema]
-    G --> H[⚡ Returns endpoint schema & structure]
-
-    H --> C
-    C --> I[🤖 Cursor/Claude/LLMs generates API client using schema]
-    I --> J[✨ Perfect API client ready!]
-
-    J --> K[👨‍💻 Developer uses generated code]
+    A[👨‍💻 Developer] -->|"💬 Generate API client<br/>for /users endpoint"| B[🎯 Cursor/IDE/LLMs]
+    B -->|"🔍 Query: What is<br/>/users endpoint?"| C[🚀 Swagger Navigator MCP Server]
+    C -->|"📊 Returns endpoint<br/>schema & structure"| B
+    B -->|"✨ Here's your<br/>generated API client"| A
 
     style A fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
-    style E fill:#ff6b6b,stroke:#333,stroke-width:4px,color:#fff
-    style J fill:#00b894,stroke:#00a085,stroke-width:2px,color:#fff
-    style K fill:#fdcb6e,stroke:#e17055,stroke-width:2px,color:#fff
+    style B fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:#fff
+    style C fill:#ff6b6b,stroke:#333,stroke-width:4px,color:#fff
 
-    classDef userAction fill:#fd79a8,stroke:#e84393,stroke-width:2px,color:#fff
-    classDef cursorAction fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:#fff
-    classDef mcpAction fill:#ff7675,stroke:#d63031,stroke-width:2px,color:#fff
-
-    class B,K userAction
-    class C,D,I cursorAction
-    class E,F,G,H mcpAction
+    linkStyle 0 stroke:#fd79a8,stroke-width:3px
+    linkStyle 1 stroke:#00b894,stroke-width:3px
+    linkStyle 2 stroke:#fdcb6e,stroke-width:3px
+    linkStyle 3 stroke:#e17055,stroke-width:3px
 ```
 
 The Swagger Navigator MCP Server acts as an intelligent API knowledge hub, seamlessly connecting developers with their API specifications. When you ask Cursor/Claude/LLMs to generate API clients, anticorruption layers, or type definitions, Cursor/Claude/LLMs consults the MCP server to get accurate, structured API information and then generates perfect code based on the actual API schema.
