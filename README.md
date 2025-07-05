@@ -1,10 +1,48 @@
 # 🔍 Swagger Navigator MCP Server
 
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![License: Apache](https://img.shields.io/badge/License-Apache-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org)
 
 An MCP server implementation that provides intelligent discovery and search capabilities for Swagger/OpenAPI endpoints. This tool enables AI assistants to dynamically explore, understand, and interact with REST APIs by parsing OpenAPI specifications and providing fuzzy search across endpoints.
+
+---
+
+## 🚀 How It Works
+
+```mermaid
+flowchart TD
+    A[👨‍💻 Developer] --> B["Hey Cursor/Claude/LLMs, generate API client for /users endpoint"]
+
+    B --> C[🎯 Cursor/Claude/LLMs]
+    C --> D["queries: What is /users endpoint?"]
+
+    D --> E[🚀 Swagger Navigator MCP Server]
+    E --> F[🔍 Searches configured API sources]
+    F --> G[📊 Finds /users endpoint schema]
+    G --> H[⚡ Returns endpoint schema & structure]
+
+    H --> C
+    C --> I[🤖 Cursor/Claude/LLMs generates API client using schema]
+    I --> J[✨ Perfect API client ready!]
+
+    J --> K[👨‍💻 Developer uses generated code]
+
+    style A fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
+    style E fill:#ff6b6b,stroke:#333,stroke-width:4px,color:#fff
+    style J fill:#00b894,stroke:#00a085,stroke-width:2px,color:#fff
+    style K fill:#fdcb6e,stroke:#e17055,stroke-width:2px,color:#fff
+
+    classDef userAction fill:#fd79a8,stroke:#e84393,stroke-width:2px,color:#fff
+    classDef cursorAction fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:#fff
+    classDef mcpAction fill:#ff7675,stroke:#d63031,stroke-width:2px,color:#fff
+
+    class B,K userAction
+    class C,D,I cursorAction
+    class E,F,G,H mcpAction
+```
+
+The Swagger Navigator MCP Server acts as an intelligent API knowledge hub, seamlessly connecting developers with their API specifications. When you ask Cursor/Claude/LLMs to generate API clients, anticorruption layers, or type definitions, Cursor/Claude/LLMs consults the MCP server to get accurate, structured API information and then generates perfect code based on the actual API schema.
 
 ---
 
