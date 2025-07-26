@@ -398,12 +398,12 @@ async function main() {
           .array(
             z
               .object({
-                name: z.string(),
-                description: z.string(),
+                name: z.string().optional(),
+                description: z.string().optional(),
                 info: z
                   .object({
-                    title: z.string(),
-                    version: z.string()
+                    title: z.string().optional(),
+                    version: z.string().optional()
                   })
                   .passthrough()
               })
@@ -499,9 +499,9 @@ async function main() {
           .array(
             z
               .object({
-                path: z.string(),
-                method: z.string(),
-                description: z.string()
+                path: z.string().optional(),
+                method: z.string().optional(),
+                description: z.string().optional()
               })
               .passthrough()
           )
@@ -616,10 +616,10 @@ async function main() {
           .array(
             z
               .object({
-                path: z.string(),
-                method: z.string(),
-                description: z.string(),
-                source_name: z.string()
+                path: z.string().optional(),
+                method: z.string().optional(),
+                description: z.string().optional(),
+                source_name: z.string().optional()
               })
               .passthrough()
           )
