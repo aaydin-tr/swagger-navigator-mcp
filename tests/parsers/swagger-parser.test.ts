@@ -68,6 +68,69 @@ describe("parsers/swagger-parser", () => {
       expect(mockSwaggerParser.validate).toHaveBeenCalledWith(fileSource.source);
     });
 
+    it("should produce a JSON-serializable spec when schemas have circular references", async () => {
+      // Setup: a dereferenced spec with a recursive (self-referencing) schema,
+      // mirroring what SwaggerParser.validate() produces for recursive $refs.
+      const fileSource: SwaggerSource = {
+        name: "circular-file",
+        source: "./circular-swagger.json",
+        description: "Circular schema source",
+        type: "file"
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const conditionSchema: any = {
+        type: "object",
+        properties: {}
+      };
+      // conditions.items references back to conditionSchema -> circular
+      conditionSchema.properties.conditions = {
+        type: "array",
+        items: conditionSchema
+      };
+
+      const mockOpenApiDoc = {
+        openapi: "3.0.0",
+        info: { title: "Circular API", version: "1.0.0" },
+        paths: {
+          "/rules": {
+            post: {
+              summary: "Create rule",
+              operationId: "createRule",
+              requestBody: {
+                content: {
+                  "application/json": {
+                    schema: conditionSchema
+                  }
+                }
+              },
+              responses: {
+                "200": {
+                  description: "Success",
+                  content: {
+                    "application/json": {
+                      schema: conditionSchema
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      mockSwaggerParser.validate.mockResolvedValue(mockOpenApiDoc as any);
+
+      // Execute
+      const result = await swaggerParser.parse(fileSource);
+
+      // Verify: parsing succeeds and the result can be serialized without throwing
+      expect(result.success).toBe(true);
+      expect(result.spec).toBeDefined();
+      expect(result.spec!.endpoints).toHaveLength(1);
+      expect(() => JSON.stringify(result.spec)).not.toThrow();
+    });
+
     it("should parse an HTTP source successfully", async () => {
       // Setup
       const httpSource: SwaggerSource = {

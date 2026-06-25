@@ -10,6 +10,7 @@ import {
   OpenAPIOperation,
   OpenAPIDocument
 } from "../types/swagger.js";
+import { decycle } from "../utils/decycle.js";
 
 export class SwaggerParserModule {
   /**
@@ -31,8 +32,9 @@ export class SwaggerParserModule {
         api = (await SwaggerParser.validate(content)) as unknown as OpenAPIDocument;
       }
 
-      // Convert to our format
-      const parsedSpec = this.convertToInternalFormat(api, source.name);
+      // Convert to our format. Dereferenced recursive schemas can contain
+      // circular references, so strip them to keep the spec JSON-serializable.
+      const parsedSpec = decycle(this.convertToInternalFormat(api, source.name));
 
       return {
         success: true,
