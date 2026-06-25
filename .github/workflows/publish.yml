@@ -38,6 +38,9 @@ jobs:
     name: "Publish: npm Registry"
     needs: [changelog]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for npm Trusted Publishing (OIDC)
+      contents: read
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
@@ -45,8 +48,12 @@ jobs:
       - name: "Setup Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      - name: "Update npm"
+        # Trusted Publishing (OIDC) requires npm >= 11.5.1
+        run: npm install -g npm@latest
 
       - name: "Install Dependencies"
         run: npm install
@@ -58,7 +65,4 @@ jobs:
         run: npm run build
 
       - name: "Publish"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish --access=public --registry=https://registry.npmjs.org --no-git-checks
+        run: npm publish --access=public --registry=https://registry.npmjs.org --no-git-checks
