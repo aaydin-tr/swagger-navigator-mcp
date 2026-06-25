@@ -48,11 +48,15 @@ jobs:
       - name: "Setup Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          # Node 24 bundles npm 11, whose OIDC handshake supports Trusted
+          # Publishing. Node 22's bundled npm 10 fails the handshake and the
+          # registry returns a misleading E404 on publish.
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: "Update npm"
-        # Trusted Publishing (OIDC) requires npm >= 11.5.1
+        # Trusted Publishing (OIDC) requires npm >= 11.5.1; even Node 24's
+        # bundled npm can ship below that, so pin to latest explicitly.
         run: npm install -g npm@latest
 
       - name: "Install Dependencies"
